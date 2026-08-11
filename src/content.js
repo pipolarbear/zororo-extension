@@ -1,6 +1,7 @@
 (() => {
   const WATCHED_KEY = "watched";
 const PANEL_STATE_KEY = "zororoPanelState";
+  const SEASON_RATINGS_KEY = "seasonRatings";
   const RATE_URL = "@RATE_URL@";
 
   const path = window.location.pathname;
@@ -13,6 +14,7 @@ const PANEL_STATE_KEY = "zororoPanelState";
 
   let showId = null;
   let showName = null;
+  let seasonRatingEnabled = true;
   let episodes = [];
   let seasons = [];
   let posterUrl = null;
@@ -68,6 +70,99 @@ const PANEL_STATE_KEY = "zororoPanelState";
     try {
       await chrome.storage.local.set({ [WATCHED_KEY]: filtered });
     } catch { }
+  }
+
+  function seasonRatingKey(showId, season) {
+    return showId + "_" + season;
+  }
+
+  async function loadSeasonRatings() {
+    try {
+      const data = await chrome.storage.local.get(SEASON_RATINGS_KEY);
+      return data[SEASON_RATINGS_KEY] || {};
+    } catch {
+      return {};
+    }
+  }
+
+  async function saveSeasonRating(showId, season, rating) {
+    const ratings = await loadSeasonRatings();
+    const key = seasonRatingKey(showId, season);
+    if (rating > 0) {
+      ratings[key] = rating;
+    } else {
+      delete ratings[key];
+    }
+    try {
+      await chrome.storage.local.set({ [SEASON_RATINGS_KEY]: ratings });
+    } catch { }
+  }
+
+  function averageRating(values) {
+    const nums = values.filter((v) => v > 0);
+    if (nums.length === 0) return 0;
+    const avg = nums.reduce((a, b) => a + b, 0) / nums.length;
+    return Math.round(avg * 2) / 2;
+  }
+
+  function makeStarEl(full, half) {
+    const s = document.createElement("span");
+    s.className = "star" + (full ? " filled" : half ? " half" : "");
+    const bg = document.createElement("span");
+    bg.className = "star-bg";
+    bg.textContent = "\u2605";
+    s.appendChild(bg);
+    if (full || half) {
+      const fill = document.createElement("span");
+      fill.className = "star-fill";
+      fill.textContent = "\u2605";
+      if (half) fill.style.width = "50%";
+      s.appendChild(fill);
+    }
+    return s;
+  }
+
+  function makeStarRow(rating, className) {
+    const row = document.createElement("span");
+    row.className = className || "ororo-star-row";
+    for (let i = 1; i <= 5; i++) {
+      row.appendChild(makeStarEl(rating >= i, !(rating >= i) && rating >= i - 0.5));
+    }
+    return row;
+  }
+
+  async function refreshGlobalRating(watchedId, showId) {
+    const ratings = await loadSeasonRatings();
+    const prefix = showId + "_";
+    const values = Object.entries(ratings)
+      .filter(([k, v]) => k.startsWith(prefix) && v > 0)
+      .map(([, v]) => v);
+    const avg = averageRating(values);
+
+    const watched = await loadWatched();
+    const idx = watched.findIndex((w) => w.id === watchedId);
+    const entry = idx >= 0 ? watched[idx] : null;
+
+    if (entry && entry.globalOverride) {
+      return entry.rating;
+    }
+
+    if (avg > 0) {
+      const base = entry || { id: watchedId, type: "show", title: showName || "", slug, url: window.location.pathname, dateWatched: new Date().toISOString() };
+      if (!entry) {
+        const p = posterUrl || tryGetPoster();
+        if (p) base.posterUrl = p;
+      }
+      base.rating = avg;
+      delete base.globalOverride;
+      await saveWatchedItem(base);
+      return avg;
+    }
+
+    if (entry && !entry.globalOverride) {
+      await removeWatchedItem(watchedId);
+    }
+    return 0;
   }
 
   // ====== STAR DROPDOWN INJECTION ======
@@ -217,10 +312,7 @@ const PANEL_STATE_KEY = "zororoPanelState";
       info.appendChild(title);
       const desc = document.createElement("p");
       desc.className = "movie-description";
-      const starSpan = document.createElement("span");
-      starSpan.style.color = "#ffd700";
-      starSpan.textContent = "\u2605".repeat(item.rating || 0) + "\u2606".repeat(5 - (item.rating || 0));
-      desc.appendChild(starSpan);
+      desc.appendChild(makeStarRow(item.rating || 0, "ororo-star-row"));
       desc.appendChild(document.createTextNode(" \u00b7 " + new Date(item.dateWatched).toLocaleDateString()));
       info.appendChild(desc);
       div.appendChild(info);
@@ -354,6 +446,7 @@ const PANEL_STATE_KEY = "zororoPanelState";
       translateComments: true,
       translateDescription: true,
       translateEpisodes: true,
+      seasonRating: true,
     };
     try {
       return await new Promise((r) => chrome.storage.sync.get(defaults, r));
@@ -659,6 +752,9 @@ const PANEL_STATE_KEY = "zororoPanelState";
     en: {
       rate: "Rate",
       rated: "Rated",
+      ratedAvgPill: "avg",
+      ratedAvgTip: "Averaged from your season ratings",
+      rateSeason: "Rate season",
       ratedTab: "Rated",
       ratedEmpty: "No rated items yet. Rate a show or movie to see it here.",
       download: "Download Selected",
@@ -709,6 +805,9 @@ const PANEL_STATE_KEY = "zororoPanelState";
     fr: {
       rate: "Noter",
       rated: "Noté",
+      ratedAvgPill: "moy",
+      ratedAvgTip: "Moyenne de vos notes de saisons",
+      rateSeason: "Noter la saison",
       ratedTab: "Notés",
       ratedEmpty: "Aucun élément noté. Notez un film ou une série pour le voir ici.",
       download: "Télécharger la sélection",
@@ -759,6 +858,9 @@ const PANEL_STATE_KEY = "zororoPanelState";
     de: {
       rate: "Bewerten",
       rated: "Bewertet",
+      ratedAvgPill: "Schnitt",
+      ratedAvgTip: "Durchschnitt Ihrer Staffelbewertungen",
+      rateSeason: "Staffel bewerten",
       ratedTab: "Bewertet",
       ratedEmpty: "Noch keine Bewertungen. Bewerten Sie eine Serie oder einen Film, um sie hier zu sehen.",
       download: "Auswahl herunterladen",
@@ -809,6 +911,9 @@ const PANEL_STATE_KEY = "zororoPanelState";
     es: {
       rate: "Puntuar",
       rated: "Puntuado",
+      ratedAvgPill: "prom",
+      ratedAvgTip: "Promedio de tus puntuaciones de temporada",
+      rateSeason: "Puntuar temporada",
       ratedTab: "Puntuados",
       ratedEmpty: "Aún no hay elementos puntuados. Puntúe una serie o película para verla aquí.",
       download: "Descargar selección",
@@ -859,6 +964,9 @@ const PANEL_STATE_KEY = "zororoPanelState";
     pt: {
       rate: "Avaliar",
       rated: "Avaliado",
+      ratedAvgPill: "média",
+      ratedAvgTip: "Média das suas avaliações de temporada",
+      rateSeason: "Avaliar temporada",
       ratedTab: "Avaliados",
       ratedEmpty: "Nenhum item avaliado ainda. Avalie uma série ou filme para vê-lo aqui.",
       download: "Baixar seleção",
@@ -909,6 +1017,9 @@ const PANEL_STATE_KEY = "zororoPanelState";
     ru: {
       rate: "Оценить",
       rated: "Оценено",
+      ratedAvgPill: "сред.",
+      ratedAvgTip: "Среднее из ваших оценок сезонов",
+      rateSeason: "Оценить сезон",
       ratedTab: "Оценённые",
       ratedEmpty: "Нет оценённых элементов. Оцените шоу или фильм, чтобы увидеть его здесь.",
       download: "Скачать выбранное",
@@ -959,6 +1070,9 @@ const PANEL_STATE_KEY = "zororoPanelState";
     it: {
       rate: "Vota",
       rated: "Votato",
+      ratedAvgPill: "media",
+      ratedAvgTip: "Media dei tuoi voti alle stagioni",
+      rateSeason: "Vota la stagione",
       ratedTab: "Votati",
       ratedEmpty: "Ancora nessun elemento votato. Vota una serie o un film per vederlo qui.",
       download: "Scarica selezione",
@@ -1009,6 +1123,9 @@ const PANEL_STATE_KEY = "zororoPanelState";
     pl: {
       rate: "Oceń",
       rated: "Ocenione",
+      ratedAvgPill: "śred.",
+      ratedAvgTip: "Średnia z twoich ocen sezonów",
+      rateSeason: "Oceń sezon",
       ratedTab: "Ocenione",
       ratedEmpty: "Brak ocenionych pozycji. Oceń serial lub film, aby zobaczyć go tutaj.",
       download: "Pobierz wybrane",
@@ -1059,6 +1176,9 @@ const PANEL_STATE_KEY = "zororoPanelState";
     tr: {
       rate: "Puanla",
       rated: "Puanlandı",
+      ratedAvgPill: "ort.",
+      ratedAvgTip: "Sezon puanlarınızın ortalaması",
+      rateSeason: "Sezonu puanla",
       ratedTab: "Puanlananlar",
       ratedEmpty: "Henüz puanlanmış öğe yok. Bir dizi veya filmi puanlamak için buraya tıklayın.",
       download: "Seçimi İndir",
@@ -1126,6 +1246,7 @@ const PANEL_STATE_KEY = "zororoPanelState";
   async function initContentPanel() {
     const config = await getConfig();
     const lang = getLangPrefix();
+    seasonRatingEnabled = config.seasonRating !== false;
 
     const { closePanelOnClickOutside, minimizeGesture, maximizeGesture } = await chrome.storage.sync.get({
       closePanelOnClickOutside: true,
@@ -1318,11 +1439,11 @@ const PANEL_STATE_KEY = "zororoPanelState";
       seasons = Array.from(seasonSet).sort((a, b) => a - b);
 
       subEl.textContent = t("episodesCount", { count: episodes.length, seasons: seasons.length });
-      renderDownloadSection(bodyEl, titleEl, subEl, statusBar, errorEl);
-
-      const watched = await loadWatched();
-      const entry = watched.find((w) => w.id === "show_" + showId);
-      buildWatchedSection(watchedEl, "show_" + showId, showName, entry || null);
+      await renderDownloadSection(bodyEl, titleEl, subEl, watchedEl, statusBar, errorEl);
+      await refreshGlobalRating("show_" + showId, showId);
+      const watchedAfter = await loadWatched();
+      const finalEntry = watchedAfter.find((w) => w.id === "show_" + showId) || null;
+      buildWatchedSection(watchedEl, "show_" + showId, showName, finalEntry);
     } catch (err) {
       const msgs = {
         AUTH_FAILED: t("authFailed"),
@@ -1393,11 +1514,12 @@ const PANEL_STATE_KEY = "zororoPanelState";
     const stars = document.createElement("span");
     stars.className = "star-rating";
     let currentRating = entry ? entry.rating : 0;
+    let overridden = entry ? !!entry.globalOverride : false;
 
     async function handleStarClick(i) {
       currentRating = currentRating === i ? 0 : i;
-      renderStars(currentRating);
       if (currentRating > 0) {
+        overridden = true;
         const item = {
           id: id,
           type: isMovie ? "movie" : "show",
@@ -1405,13 +1527,27 @@ const PANEL_STATE_KEY = "zororoPanelState";
           slug: slug,
           url: window.location.pathname,
           rating: currentRating,
+          globalOverride: true,
           dateWatched: new Date().toISOString(),
         };
         const p = poster || posterUrl || tryGetPoster();
         if (p) item.posterUrl = p;
         await saveWatchedItem(item);
-      } else {
+        renderStars(currentRating);
+      } else if (isMovie) {
+        overridden = false;
         await removeWatchedItem(id);
+        renderStars(0);
+      } else {
+        const watched = await loadWatched();
+        const cur = watched.find((w) => w.id === id);
+        if (cur) {
+          delete cur.globalOverride;
+          await saveWatchedItem(cur);
+        }
+        overridden = false;
+        currentRating = await refreshGlobalRating(id, showId);
+        renderStars(currentRating);
       }
     }
 
@@ -1422,9 +1558,7 @@ const PANEL_STATE_KEY = "zororoPanelState";
       label.textContent = rating > 0 ? t("rated") : t("rate");
       stars.appendChild(label);
       for (let i = 1; i <= 5; i++) {
-        const s = document.createElement("span");
-        s.className = "star" + (i <= rating ? " filled" : "");
-        s.textContent = "\u2605";
+        const s = makeStarEl(rating >= i, !(rating >= i) && rating >= i - 0.5);
         s.dataset.value = String(i);
         s.onmouseenter = () => {
           for (const child of stars.children) {
@@ -1441,10 +1575,60 @@ const PANEL_STATE_KEY = "zororoPanelState";
           child.classList.remove("hover");
         }
       };
+      if (rating > 0 && !overridden) {
+        const pill = document.createElement("span");
+        pill.className = "watched-pill";
+        pill.textContent = t("ratedAvgPill");
+        pill.title = t("ratedAvgTip");
+        stars.appendChild(pill);
+      }
     }
     renderStars(currentRating);
 
     watchedEl.appendChild(stars);
+  }
+
+  function buildSeasonRating(season, seasonRatings, watchedEl) {
+    const wrap = document.createElement("span");
+    wrap.className = "season-rating";
+    wrap.title = t("rateSeason");
+    const key = seasonRatingKey(showId, season);
+
+    const render = (rating) => {
+      wrap.replaceChildren();
+      for (let i = 1; i <= 5; i++) {
+        const s = document.createElement("span");
+        s.className = "star" + (i <= rating ? " filled" : "");
+        s.textContent = "\u2605";
+        s.dataset.value = String(i);
+        s.onmouseenter = () => {
+          for (const child of wrap.children) {
+            if (child.dataset && child.dataset.value) {
+              child.classList.toggle("hover", Number(child.dataset.value) <= i);
+            }
+          }
+        };
+        s.onclick = async () => {
+          const current = seasonRatings[key] || 0;
+          const next = current === i ? 0 : i;
+          seasonRatings[key] = next;
+          await saveSeasonRating(showId, season, next);
+          render(next);
+          await refreshGlobalRating("show_" + showId, showId);
+          const watched = await loadWatched();
+          const entry = watched.find((w) => w.id === "show_" + showId) || null;
+          buildWatchedSection(watchedEl, "show_" + showId, showName, entry);
+        };
+        wrap.appendChild(s);
+      }
+      wrap.onmouseleave = () => {
+        for (const child of wrap.children) {
+          child.classList.remove("hover");
+        }
+      };
+    };
+    render(seasonRatings[key] || 0);
+    return wrap;
   }
 
   function episodeYear(ep) {
@@ -1504,9 +1688,14 @@ const PANEL_STATE_KEY = "zororoPanelState";
     statusBar.appendChild(nudge);
   }
 
-  function renderDownloadSection(bodyEl, titleEl, subEl, statusBar, errorEl) {
+  async function renderDownloadSection(bodyEl, titleEl, subEl, watchedEl, statusBar, errorEl) {
     const old = document.getElementById("ororo-dl-download");
     if (old) old.remove();
+
+    let seasonRatings = {};
+    if (seasonRatingEnabled) {
+      seasonRatings = await loadSeasonRatings();
+    }
 
     const wrap = document.createElement("div");
     wrap.id = "ororo-dl-download";
@@ -1592,6 +1781,10 @@ const PANEL_STATE_KEY = "zororoPanelState";
       const div = document.createElement("div");
       div.className = "season-group" + (incomplete ? " incomplete" : "");
       div.appendChild(label);
+      if (!incomplete && seasonRatingEnabled) {
+        const ratingEl = buildSeasonRating(s, seasonRatings, watchedEl);
+        div.appendChild(ratingEl);
+      }
       seasonsEl.appendChild(div);
     }
 

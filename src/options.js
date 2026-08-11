@@ -10,6 +10,7 @@ const DEFAULTS = {
   closePanelOnClickOutside: true,
   minimizeGesture: "dblclick",
   maximizeGesture: "dblclick",
+  seasonRating: true,
 };
 
 async function load() {
@@ -31,6 +32,7 @@ async function load() {
   document.getElementById("closePanelOnClickOutside").checked = config.closePanelOnClickOutside;
   document.getElementById("minimizeGesture").value = config.minimizeGesture;
   document.getElementById("maximizeGesture").value = config.maximizeGesture;
+  document.getElementById("seasonRating").checked = config.seasonRating;
   updateGestureDisabled();
   document.getElementById("closePanelOnClickOutside").onchange = updateGestureDisabled;
 }
@@ -73,8 +75,9 @@ async function save() {
   const closePanelOnClickOutside = document.getElementById("closePanelOnClickOutside").checked;
   const minimizeGesture = document.getElementById("minimizeGesture").value;
   const maximizeGesture = document.getElementById("maximizeGesture").value;
+  const seasonRating = document.getElementById("seasonRating").checked;
 
-  await chrome.storage.sync.set({ rootDir, subtitleLangs, defaultSubLang, translateComments, translateDescription, translateEpisodes, closePanelOnClickOutside, minimizeGesture, maximizeGesture });
+  await chrome.storage.sync.set({ rootDir, subtitleLangs, defaultSubLang, translateComments, translateDescription, translateEpisodes, closePanelOnClickOutside, minimizeGesture, maximizeGesture, seasonRating });
 
   const status = document.getElementById("status");
   status.textContent = "Saved.";

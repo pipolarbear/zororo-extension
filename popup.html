@@ -54,7 +54,19 @@
     .item .info { flex: 1; min-width: 0; }
     .item .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .item .meta { font-size: 11px; color: #666; }
-    .item .stars { color: #ffd700; font-size: 14px; flex-shrink: 0; }
+    .item .stars { font-size: 14px; flex-shrink: 0; }
+    .item .stars .star { position: relative; display: inline-block; color: #666; line-height: 1; }
+    .item .stars .star .star-bg { color: inherit; }
+    .item .stars .star .star-fill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      color: #ffd700;
+    }
+    .item .stars .star.filled .star-bg,
+    .item .stars .star.filled .star-fill { color: #ffd700; }
     .item .type-badge {
       font-size: 9px;
       padding: 1px 5px;

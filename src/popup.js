@@ -1,8 +1,25 @@
 const WATCHED_KEY = "watched";
 let activeTab = "queue";
 
-function starsHTML(rating) {
-  return "\u2605".repeat(rating) + "\u2606".repeat(5 - rating);
+function buildStars(row, rating) {
+  for (let i = 1; i <= 5; i++) {
+    const full = rating >= i;
+    const half = !full && rating >= i - 0.5;
+    const s = document.createElement("span");
+    s.className = "star" + (full ? " filled" : half ? " half" : "");
+    const bg = document.createElement("span");
+    bg.className = "star-bg";
+    bg.textContent = "\u2605";
+    s.appendChild(bg);
+    if (full || half) {
+      const fill = document.createElement("span");
+      fill.className = "star-fill";
+      fill.textContent = "\u2605";
+      if (half) fill.style.width = "50%";
+      s.appendChild(fill);
+    }
+    row.appendChild(s);
+  }
 }
 
 async function init() {
@@ -146,7 +163,7 @@ async function renderWatched() {
 
     const stars = document.createElement("span");
     stars.className = "stars";
-    stars.textContent = starsHTML(item.rating || 0);
+    buildStars(stars, item.rating || 0);
 
     const link = document.createElement("a");
     link.className = "watched-link";

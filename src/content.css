@@ -36,11 +36,16 @@
 }
 
 #ororo-dl-panel .season-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   margin-bottom: 6px;
 }
 
 #ororo-dl-panel .season-group label {
   display: flex;
+  flex: 1;
+  min-width: 0;
   align-items: center;
   gap: 8px;
   padding: 6px 8px;
@@ -96,6 +101,31 @@
   font-weight: 600;
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+#ororo-dl-panel .season-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  flex-shrink: 0;
+  padding-right: 6px;
+}
+
+#ororo-dl-panel .season-rating .star {
+  font-size: 13px;
+  cursor: pointer;
+  color: #444;
+  transition: color 0.15s;
+  line-height: 1;
+}
+
+#ororo-dl-panel .season-rating .star.filled {
+  color: #ffd700;
+}
+
+#ororo-dl-panel .season-rating .star:hover,
+#ororo-dl-panel .season-rating .star.hover {
+  color: #ffed4a;
 }
 
 #ororo-dl-panel .season-count {
@@ -204,6 +234,19 @@
   user-select: none;
 }
 
+#ororo-dl-panel .watched-pill {
+  font-size: 10px;
+  line-height: 1;
+  padding: 2px 5px;
+  margin-left: 4px;
+  border-radius: 8px;
+  background: rgba(0, 184, 148, 0.2);
+  color: #b4a465;
+  font-weight: 600;
+  user-select: none;
+  white-space: nowrap;
+}
+
 #ororo-dl-panel .star-rating {
   display: inline-flex;
   align-items: center;
@@ -216,14 +259,35 @@
   color: #444;
   transition: color 0.15s;
   line-height: 1;
+  position: relative;
+  display: inline-block;
 }
 
-#ororo-dl-panel .star-rating .star.filled {
+#ororo-dl-panel .star-rating .star .star-bg {
+  color: inherit;
+}
+
+#ororo-dl-panel .star-rating .star .star-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  color: #ffd700;
+}
+
+#ororo-dl-panel .star-rating .star.filled .star-bg,
+#ororo-dl-panel .star-rating .star.filled .star-fill {
   color: #ffd700;
 }
 
 #ororo-dl-panel .star-rating .star:hover,
 #ororo-dl-panel .star-rating .star.hover {
+  color: #ffed4a;
+}
+
+#ororo-dl-panel .star-rating .star:hover .star-fill,
+#ororo-dl-panel .star-rating .star.hover .star-fill {
   color: #ffed4a;
 }
 
@@ -234,6 +298,31 @@
 .ororo-watched-panel .favorites-list {
   max-height: calc(100vh - 256px);
   overflow-y: auto;
+}
+
+.ororo-star-row .star {
+  position: relative;
+  display: inline-block;
+  color: #999;
+  line-height: 1;
+}
+
+.ororo-star-row .star .star-bg {
+  color: inherit;
+}
+
+.ororo-star-row .star .star-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  color: #ffd700;
+}
+
+.ororo-star-row .star.filled .star-bg,
+.ororo-star-row .star.filled .star-fill {
+  color: #ffd700;
 }
 
 /* ====== WATCHED TAB SORT CONTROLS ====== */
