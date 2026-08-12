@@ -754,6 +754,8 @@ const PANEL_STATE_KEY = "zororoPanelState";
       rated: "Rated",
       ratedAvgPill: "avg",
       ratedAvgTip: "Averaged from your season ratings",
+      openImdb: "View on IMDb",
+      openRt: "View on Rotten Tomatoes",
       rateSeason: "Rate season",
       ratedTab: "Rated",
       ratedEmpty: "No rated items yet. Rate a show or movie to see it here.",
@@ -807,6 +809,8 @@ const PANEL_STATE_KEY = "zororoPanelState";
       rated: "Noté",
       ratedAvgPill: "moy",
       ratedAvgTip: "Moyenne de vos notes de saisons",
+      openImdb: "Voir sur IMDb",
+      openRt: "Voir sur Rotten Tomatoes",
       rateSeason: "Noter la saison",
       ratedTab: "Notés",
       ratedEmpty: "Aucun élément noté. Notez un film ou une série pour le voir ici.",
@@ -860,6 +864,8 @@ const PANEL_STATE_KEY = "zororoPanelState";
       rated: "Bewertet",
       ratedAvgPill: "Schnitt",
       ratedAvgTip: "Durchschnitt Ihrer Staffelbewertungen",
+      openImdb: "Auf IMDb ansehen",
+      openRt: "Auf Rotten Tomatoes ansehen",
       rateSeason: "Staffel bewerten",
       ratedTab: "Bewertet",
       ratedEmpty: "Noch keine Bewertungen. Bewerten Sie eine Serie oder einen Film, um sie hier zu sehen.",
@@ -913,6 +919,8 @@ const PANEL_STATE_KEY = "zororoPanelState";
       rated: "Puntuado",
       ratedAvgPill: "prom",
       ratedAvgTip: "Promedio de tus puntuaciones de temporada",
+      openImdb: "Ver en IMDb",
+      openRt: "Ver en Rotten Tomatoes",
       rateSeason: "Puntuar temporada",
       ratedTab: "Puntuados",
       ratedEmpty: "Aún no hay elementos puntuados. Puntúe una serie o película para verla aquí.",
@@ -966,6 +974,8 @@ const PANEL_STATE_KEY = "zororoPanelState";
       rated: "Avaliado",
       ratedAvgPill: "média",
       ratedAvgTip: "Média das suas avaliações de temporada",
+      openImdb: "Ver no IMDb",
+      openRt: "Ver no Rotten Tomatoes",
       rateSeason: "Avaliar temporada",
       ratedTab: "Avaliados",
       ratedEmpty: "Nenhum item avaliado ainda. Avalie uma série ou filme para vê-lo aqui.",
@@ -1019,6 +1029,8 @@ const PANEL_STATE_KEY = "zororoPanelState";
       rated: "Оценено",
       ratedAvgPill: "сред.",
       ratedAvgTip: "Среднее из ваших оценок сезонов",
+      openImdb: "Смотреть на IMDb",
+      openRt: "Смотреть на Rotten Tomatoes",
       rateSeason: "Оценить сезон",
       ratedTab: "Оценённые",
       ratedEmpty: "Нет оценённых элементов. Оцените шоу или фильм, чтобы увидеть его здесь.",
@@ -1072,6 +1084,8 @@ const PANEL_STATE_KEY = "zororoPanelState";
       rated: "Votato",
       ratedAvgPill: "media",
       ratedAvgTip: "Media dei tuoi voti alle stagioni",
+      openImdb: "Vedi su IMDb",
+      openRt: "Vedi su Rotten Tomatoes",
       rateSeason: "Vota la stagione",
       ratedTab: "Votati",
       ratedEmpty: "Ancora nessun elemento votato. Vota una serie o un film per vederlo qui.",
@@ -1125,6 +1139,8 @@ const PANEL_STATE_KEY = "zororoPanelState";
       rated: "Ocenione",
       ratedAvgPill: "śred.",
       ratedAvgTip: "Średnia z twoich ocen sezonów",
+      openImdb: "Zobacz na IMDb",
+      openRt: "Zobacz na Rotten Tomatoes",
       rateSeason: "Oceń sezon",
       ratedTab: "Ocenione",
       ratedEmpty: "Brak ocenionych pozycji. Oceń serial lub film, aby zobaczyć go tutaj.",
@@ -1178,6 +1194,8 @@ const PANEL_STATE_KEY = "zororoPanelState";
       rated: "Puanlandı",
       ratedAvgPill: "ort.",
       ratedAvgTip: "Sezon puanlarınızın ortalaması",
+      openImdb: "IMDb'de görüntüle",
+      openRt: "Rotten Tomatoes'ta görüntüle",
       rateSeason: "Sezonu puanla",
       ratedTab: "Puanlananlar",
       ratedEmpty: "Henüz puanlanmış öğe yok. Bir dizi veya filmi puanlamak için buraya tıklayın.",
@@ -1265,10 +1283,20 @@ const PANEL_STATE_KEY = "zororoPanelState";
     closeBtn.textContent = "×";
     panel.appendChild(closeBtn);
 
+    const titleRow = document.createElement("div");
+    titleRow.className = "title-row";
+
     const titleEl = document.createElement("h2");
     titleEl.id = "ororo-dl-title";
     titleEl.textContent = "zororo";
-    panel.appendChild(titleEl);
+    titleRow.appendChild(titleEl);
+
+    const extLinksEl = document.createElement("div");
+    extLinksEl.id = "ororo-dl-extlinks";
+    extLinksEl.className = "ext-links";
+    extLinksEl.style.display = "none";
+    titleRow.appendChild(extLinksEl);
+    panel.appendChild(titleRow);
 
     const subEl = document.createElement("p");
     subEl.className = "subtitle";
@@ -1401,13 +1429,13 @@ const PANEL_STATE_KEY = "zororoPanelState";
     }
 
     if (isMovie) {
-      await initMovie(titleEl, subEl, bodyEl, watchedEl, statusBar, errorEl);
+      await initMovie(titleEl, subEl, bodyEl, watchedEl, statusBar, errorEl, extLinksEl);
     } else {
-      await initShow(titleEl, subEl, bodyEl, watchedEl, statusBar, errorEl);
+      await initShow(titleEl, subEl, bodyEl, watchedEl, statusBar, errorEl, extLinksEl);
     }
   }
 
-  async function initShow(titleEl, subEl, bodyEl, watchedEl, statusBar, errorEl) {
+  async function initShow(titleEl, subEl, bodyEl, watchedEl, statusBar, errorEl, extLinksEl) {
     try {
       const resp = await fetch("/api/v2/shows", { credentials: "include" });
       if (!resp.ok) {
@@ -1444,6 +1472,9 @@ const PANEL_STATE_KEY = "zororoPanelState";
       const watchedAfter = await loadWatched();
       const finalEntry = watchedAfter.find((w) => w.id === "show_" + showId) || null;
       buildWatchedSection(watchedEl, "show_" + showId, showName, finalEntry);
+    const years = episodes.map(episodeYear).filter((y) => y);
+    const minYear = years.length ? Math.min(...years) : null;
+    try { await renderExternalLinks(extLinksEl, showName, minYear, false); } catch {}
     } catch (err) {
       const msgs = {
         AUTH_FAILED: t("authFailed"),
@@ -1456,7 +1487,7 @@ const PANEL_STATE_KEY = "zororoPanelState";
     }
   }
 
-  async function initMovie(titleEl, subEl, bodyEl, watchedEl, statusBar, errorEl) {
+  async function initMovie(titleEl, subEl, bodyEl, watchedEl, statusBar, errorEl, extLinksEl) {
     try {
       const resp = await fetch("/api/v2/shows", { credentials: "include" });
       if (!resp.ok) {
@@ -1506,6 +1537,7 @@ const PANEL_STATE_KEY = "zororoPanelState";
     const watched = await loadWatched();
     const entry = watched.find((w) => w.id === "movie_" + showId);
     buildWatchedSection(watchedEl, "movie_" + showId, showName, entry || null);
+    try { await renderExternalLinks(extLinksEl, showName, null, true); } catch {}
   }
 
   function buildWatchedSection(watchedEl, id, title, entry, poster) {
@@ -1641,6 +1673,77 @@ const PANEL_STATE_KEY = "zororoPanelState";
       }
     }
     return null;
+  }
+
+  async function renderExternalLinks(extLinksEl, title, year, isMovie) {
+    if (!title) {
+      extLinksEl.style.display = "none";
+      return;
+    }
+    let resolved = false;
+
+    function showLoading() {
+      extLinksEl.replaceChildren();
+      const load = document.createElement("span");
+      load.className = "ext-link-loading";
+      load.textContent = "loading…";
+      extLinksEl.appendChild(load);
+      extLinksEl.style.display = "flex";
+    }
+
+    function renderLinks(imdbUrl, rtUrl) {
+      if (resolved) return;
+      extLinksEl.replaceChildren();
+      let hasLinks = false;
+
+      if (imdbUrl) {
+        const a = document.createElement("a");
+        a.className = "ext-link imdb";
+        a.href = imdbUrl;
+        a.target = "_blank";
+        a.rel = "noopener";
+        a.textContent = "IMDb";
+        a.title = t("openImdb");
+        extLinksEl.appendChild(a);
+        hasLinks = true;
+      }
+
+      if (rtUrl) {
+        const a = document.createElement("a");
+        a.className = "ext-link rt";
+        a.href = rtUrl;
+        a.target = "_blank";
+        a.rel = "noopener";
+        a.textContent = "RT";
+        a.title = t("openRt");
+        extLinksEl.appendChild(a);
+        hasLinks = true;
+      }
+
+      if (hasLinks) {
+        extLinksEl.style.display = "flex";
+      } else {
+        extLinksEl.style.display = "none";
+      }
+      resolved = true;
+    }
+
+    showLoading();
+
+    try {
+      const resp = await new Promise((resolve) => {
+        chrome.runtime.sendMessage(
+          { type: "resolve-external-links", title, year, mediaType: isMovie ? "movie" : "show" },
+          (r) => resolve(r || { imdb: null, rt: null })
+        );
+      });
+      if (resolved) return;
+      renderLinks(resp.imdb, resp.rt);
+    } catch {
+      if (!resolved) {
+        extLinksEl.style.display = "none";
+      }
+    }
   }
 
   async function recordSuccessfulDownload(statusBar) {

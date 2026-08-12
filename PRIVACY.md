@@ -27,6 +27,8 @@ The extension makes requests to:
 - **Google Translate** (`translate.googleapis.com`) — to translate comments, descriptions, and episode plots when the user clicks "Translate". Only triggered by explicit user action. No personal data is transmitted.
 - **QR code server** (`https://api.qrserver.com/`) — to render a QR code for a crypto donation address when the user clicks a crypto pill in the support modal. Only triggered by explicit user action. No personal data is sent; the wallet address is public blockchain information.
 - **Chrome downloads API** — to trigger file downloads, running entirely in your browser.
+- **IMDb** (`https://v2.sg.media-imdb.com/suggestion/x/...`) — to look up and link the official IMDb page for the current show/movie. Triggered when a show/movie page loads. No login or personal data; only the normalized title slug is sent as part of the URL.
+- **Rotten Tomatoes** (`https://www.rottentomatoes.com/...`) — same purpose: resolve and link the official Rotten Tomatoes page for the current show/movie. Triggered on page load. No login or personal data.
 
 ### What is NOT collected
 
@@ -43,6 +45,8 @@ The extension uses the following third-party services:
 - **Buy Me a Coffee** (`buymeacoffee.com`) — the "Support" button links to a Ko-fi page via a standard `<a>` navigation. No data is sent by the extension.
 - **Google Translate** (`translate.googleapis.com`) — translates comments, show descriptions, and episode plots on ororo.tv when the user clicks "Translate". The text is sent to Google for translation. Only triggered by explicit user action. No personal data is transmitted.
 - **Formspree** (`formspree.io`) — forwards feedback form submissions from the support modal to the developer's email. Only triggered by explicit user action. No personal data is transmitted beyond what the user voluntarily enters (title, description, page URL).
+- **IMDb** (`v2.sg.media-imdb.com`) — resolves and links the official IMDb page for the current show/movie. No tracking or analytics; only title queries are sent.
+- **Rotten Tomatoes** (`rottentomatoes.com`) — resolves and links the official Rotten Tomatoes page for the current show/movie. No tracking or analytics; only title queries are sent.
 
 No other third-party services, SDKs, analytics frameworks, or tracking are integrated.
 

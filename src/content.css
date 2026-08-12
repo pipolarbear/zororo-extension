@@ -247,6 +247,71 @@
   white-space: nowrap;
 }
 
+#ororo-dl-panel .title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+#ororo-dl-panel .title-row #ororo-dl-title {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#ororo-dl-panel .ext-links {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+#ororo-dl-panel .ext-link {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  line-height: 1;
+  padding: 3px 6px;
+  border-radius: 8px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+  transition: filter 0.15s;
+}
+
+#ororo-dl-panel .ext-link:hover {
+  filter: brightness(1.15);
+  text-decoration: none;
+}
+
+#ororo-dl-panel .ext-link.imdb {
+  background: #f5c518;
+  color: #1a1a2e;
+}
+
+#ororo-dl-panel .ext-link.rt {
+  background: #fa320a;
+  color: #fff;
+}
+
+#ororo-dl-panel .ext-link-loading {
+  font-size: 10px;
+  line-height: 1;
+  padding: 3px 6px;
+  border-radius: 8px;
+  background: rgba(0, 184, 148, 0.12);
+  color: #2ee6a0;
+  font-weight: 600;
+  font-style: italic;
+  opacity: 0.6;
+  white-space: nowrap;
+}
+
 #ororo-dl-panel .star-rating {
   display: inline-flex;
   align-items: center;
