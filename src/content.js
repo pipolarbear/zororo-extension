@@ -447,12 +447,37 @@ const PANEL_STATE_KEY = "zororoPanelState";
       translateDescription: true,
       translateEpisodes: true,
       seasonRating: true,
+      theme: "light",
     };
     try {
       return await new Promise((r) => chrome.storage.sync.get(defaults, r));
     } catch {
       return defaults;
     }
+  }
+
+  const THEME_KEY = "zororoTheme";
+
+  function applyTheme(theme) {
+    const value = theme === "dark" ? "dark" : "light";
+    if (document.documentElement) {
+      document.documentElement.setAttribute("data-zororo-theme", value);
+    }
+    try {
+      localStorage.setItem(THEME_KEY, value);
+    } catch { }
+  }
+
+  async function initTheme() {
+    try {
+      const { theme } = await chrome.storage.sync.get({ theme: "light" });
+      applyTheme(theme);
+    } catch { }
+    try {
+      chrome.storage.onChanged.addListener((changes, area) => {
+        if (area === "sync" && changes.theme) applyTheme(changes.theme.newValue);
+      });
+    } catch { }
   }
 
   function tryGetPoster() {
@@ -2208,6 +2233,7 @@ const PANEL_STATE_KEY = "zororoPanelState";
     }
   }
 
+  initTheme();
   initDropdownInjection();
   getConfig().then((cfg) => {
     if (cfg.translateComments) initCommentTranslation();

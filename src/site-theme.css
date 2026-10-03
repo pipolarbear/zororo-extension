@@ -1,0 +1,649 @@
+/* Zororo dark theme for ororo.tv.
+   Everything is gated behind html[data-zororo-theme="dark"], so the default
+   light theme is exactly the site's own look. Site content lives inside
+   #wrapper; the Zororo panel/overlays are appended to <body>, so scoping to
+   #wrapper leaves our own UI untouched. */
+
+html[data-zororo-theme="dark"] {
+  color-scheme: dark;
+
+  --s-bg: #14161c;
+  --s-bg-elev: #1b1e27;
+  --s-surface: #222633;
+  --s-surface-2: #2a2f3d;
+  --s-surface-3: #313749;
+  --s-border: #333a49;
+  --s-border-strong: #414a5e;
+  --s-text: #e6e8ee;
+  --s-text-muted: #9aa2b1;
+  --s-text-strong: #ffffff;
+  --s-link: #6cb6ff;
+  --s-link-hover: #9ccbff;
+  --s-blue: #3ea4f5;
+  --s-blue-soft: rgba(62, 164, 245, 0.18);
+  --s-green: #7ac943;
+  --s-green-soft: rgba(122, 201, 67, 0.16);
+  --s-red: #ec5840;
+  --s-red-soft: rgba(236, 88, 64, 0.16);
+  --s-amber: #f5a623;
+  --s-amber-soft: rgba(245, 166, 35, 0.16);
+  --s-input-bg: #1b1e27;
+  --s-overlay: rgba(6, 8, 14, 0.72);
+  --s-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+/* ===== Base surfaces ===== */
+
+html[data-zororo-theme="dark"] body {
+  background: var(--s-bg) !important;
+  color: var(--s-text);
+}
+
+html[data-zororo-theme="dark"] #wrapper {
+  background: var(--s-bg);
+  color: var(--s-text);
+}
+
+html[data-zororo-theme="dark"] .underlay {
+  background: var(--s-overlay);
+  opacity: 1;
+}
+
+html[data-zororo-theme="dark"] ::selection {
+  background: rgba(108, 92, 231, 0.45);
+  color: #fff;
+}
+
+html[data-zororo-theme="dark"] #wrapper ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+html[data-zororo-theme="dark"] #wrapper ::-webkit-scrollbar-track {
+  background: var(--s-bg);
+}
+html[data-zororo-theme="dark"] #wrapper ::-webkit-scrollbar-thumb {
+  background: #3a4152;
+  border-radius: 5px;
+}
+html[data-zororo-theme="dark"] #wrapper ::-webkit-scrollbar-thumb:hover {
+  background: #4a5468;
+}
+
+/* ===== Typography + links (inside the page wrapper only) ===== */
+
+html[data-zororo-theme="dark"] h1,
+html[data-zororo-theme="dark"] h2,
+html[data-zororo-theme="dark"] h3,
+html[data-zororo-theme="dark"] h4,
+html[data-zororo-theme="dark"] h5,
+html[data-zororo-theme="dark"] h6 {
+  color: var(--s-text-strong);
+}
+
+/* Generic standalone dialogs live outside #wrapper. */
+html[data-zororo-theme="dark"] .dialog {
+  background: var(--s-surface);
+  color: var(--s-text);
+  border-color: var(--s-border);
+}
+html[data-zororo-theme="dark"] .dialog h1,
+html[data-zororo-theme="dark"] .dialog h2,
+html[data-zororo-theme="dark"] .dialog h3,
+html[data-zororo-theme="dark"] .dialog p,
+html[data-zororo-theme="dark"] .dialog span {
+  color: var(--s-text) !important;
+}
+
+/* :where() keeps this at low specificity so the site's own component rules
+   (buttons, colored pills, etc.) still win. */
+html[data-zororo-theme="dark"] :where(#wrapper) a {
+  color: var(--s-link);
+}
+html[data-zororo-theme="dark"] :where(#wrapper) a:hover {
+  color: var(--s-link-hover);
+}
+
+/* Keep the header/logo and footer legible on their own dark chrome. */
+html[data-zororo-theme="dark"] #wrapper .site-header a,
+html[data-zororo-theme="dark"] #wrapper .site-header .menu-link {
+  color: #fff;
+}
+html[data-zororo-theme="dark"] #wrapper .site-header a:hover {
+  color: var(--s-link-hover);
+}
+
+/* Zororo-injected bits that live inside #wrapper keep their own colors. */
+html[data-zororo-theme="dark"] #wrapper .ororo-watched-panel a,
+html[data-zororo-theme="dark"] #wrapper .ororo-watched-panel .movie-title,
+html[data-zororo-theme="dark"] #wrapper .ororo-watched-panel .movie-description {
+  color: var(--s-text);
+}
+html[data-zororo-theme="dark"] #wrapper .ororo-tt-link {
+  color: #a29bfe;
+}
+html[data-zororo-theme="dark"] #wrapper .ororo-tt-link:hover {
+  color: #c3bcff;
+}
+
+/* ===== Header / nav ===== */
+
+html[data-zororo-theme="dark"] .site-header,
+html[data-zororo-theme="dark"] .site-header-inner,
+html[data-zororo-theme="dark"] .header-wrapper {
+  background: var(--s-bg-elev);
+  border-color: var(--s-border);
+}
+html[data-zororo-theme="dark"] .submenu {
+  background: var(--s-surface);
+  border-color: var(--s-border);
+  box-shadow: var(--s-shadow);
+}
+html[data-zororo-theme="dark"] .submenu a,
+html[data-zororo-theme="dark"] .dropdown-menu a,
+html[data-zororo-theme="dark"] .menu-sidebar a {
+  color: var(--s-text);
+}
+html[data-zororo-theme="dark"] .submenu a:hover {
+  background: var(--s-surface-2);
+  color: #fff;
+}
+
+/* ===== Search ===== */
+
+html[data-zororo-theme="dark"] .search-box,
+html[data-zororo-theme="dark"] .search-form,
+html[data-zororo-theme="dark"] .search-results {
+  background: var(--s-surface);
+  border-color: var(--s-border);
+  box-shadow: var(--s-shadow);
+}
+html[data-zororo-theme="dark"] .search-box-input {
+  background: var(--s-input-bg);
+  color: var(--s-text);
+  border-color: var(--s-border);
+}
+html[data-zororo-theme="dark"] .search-results-item:hover {
+  background: var(--s-surface-2);
+}
+html[data-zororo-theme="dark"] .search-results-item-text,
+html[data-zororo-theme="dark"] .search-results-item .subtitle {
+  color: var(--s-text-muted);
+}
+
+/* ===== Landing sections ===== */
+
+html[data-zororo-theme="dark"] .promo,
+html[data-zororo-theme="dark"] .features-translation,
+html[data-zororo-theme="dark"] .features-multilanguages,
+html[data-zororo-theme="dark"] .features-dictionary,
+html[data-zororo-theme="dark"] .features-subscription,
+html[data-zororo-theme="dark"] .banner,
+html[data-zororo-theme="dark"] .banner-inner {
+  background: var(--s-bg);
+  color: var(--s-text);
+}
+html[data-zororo-theme="dark"] .banner-inner {
+  background: var(--s-surface);
+  border-color: var(--s-border);
+}
+html[data-zororo-theme="dark"] .tagline,
+html[data-zororo-theme="dark"] .description {
+  color: var(--s-text);
+}
+
+/* ===== Cards / show + movie tiles ===== */
+
+html[data-zororo-theme="dark"] .card,
+html[data-zororo-theme="dark"] .card-inner,
+html[data-zororo-theme="dark"] .card-front,
+html[data-zororo-theme="dark"] .card-image,
+html[data-zororo-theme="dark"] .card-about,
+html[data-zororo-theme="dark"] .card-genres,
+html[data-zororo-theme="dark"] .card-head,
+html[data-zororo-theme="dark"] .card-text,
+html[data-zororo-theme="dark"] .card-numbers,
+html[data-zororo-theme="dark"] .card-note,
+html[data-zororo-theme="dark"] .card-popup,
+html[data-zororo-theme="dark"] .card-select,
+html[data-zororo-theme="dark"] .series-card,
+html[data-zororo-theme="dark"] .series-card-wrapper,
+html[data-zororo-theme="dark"] .series-card-about,
+html[data-zororo-theme="dark"] .series-card-desc,
+html[data-zororo-theme="dark"] .series-card-control,
+html[data-zororo-theme="dark"] .series-card-preview {
+  background: var(--s-surface);
+  border-color: var(--s-border);
+  color: var(--s-text);
+}
+html[data-zororo-theme="dark"] .card:hover,
+html[data-zororo-theme="dark"] .series-card:hover {
+  background: var(--s-surface-2);
+}
+html[data-zororo-theme="dark"] .card-title,
+html[data-zororo-theme="dark"] .series-card-title,
+html[data-zororo-theme="dark"] .series-card-name {
+  color: var(--s-text-strong);
+}
+html[data-zororo-theme="dark"] .series-card-date,
+html[data-zororo-theme="dark"] .series-card-lang,
+html[data-zororo-theme="dark"] .card-note {
+  color: var(--s-text-muted);
+}
+html[data-zororo-theme="dark"] .card-genres-item {
+  background: var(--s-blue-soft);
+  color: var(--s-link);
+}
+
+/* ===== Show page: seasons + episodes ===== */
+
+html[data-zororo-theme="dark"] .show-content,
+html[data-zororo-theme="dark"] .show-page,
+html[data-zororo-theme="dark"] .show-page-row,
+html[data-zororo-theme="dark"] .show-content__left-side,
+html[data-zororo-theme="dark"] .show-content__right-side {
+  background: var(--s-bg);
+  color: var(--s-text);
+}
+html[data-zororo-theme="dark"] .show-content__title,
+html[data-zororo-theme="dark"] .show-content__description {
+  color: var(--s-text);
+}
+
+/* Lift the main poster off the page (show + movie pages). */
+html[data-zororo-theme="dark"] #wrapper img.poster-image {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.30),
+    0 0 16px rgba(255, 255, 255, 0.16),
+    0 0 40px rgba(255, 255, 255, 0.08),
+    0 8px 22px rgba(0, 0, 0, 0.5);
+}
+
+html[data-zororo-theme="dark"] .show-seasons,
+html[data-zororo-theme="dark"] .show-seasons-inner,
+html[data-zororo-theme="dark"] .show-seasons-list,
+html[data-zororo-theme="dark"] .show-seasons-list-item,
+html[data-zororo-theme="dark"] .show-seasons-tabs,
+html[data-zororo-theme="dark"] .show-seasons-tabs-item,
+html[data-zororo-theme="dark"] .seasons,
+html[data-zororo-theme="dark"] .season,
+html[data-zororo-theme="dark"] .season-control,
+html[data-zororo-theme="dark"] .season-pane {
+  background: var(--s-surface);
+  border-color: var(--s-border);
+  color: var(--s-text);
+}
+html[data-zororo-theme="dark"] .show-seasons-tabs-item.active,
+html[data-zororo-theme="dark"] .show-seasons-btn-watched:hover {
+  background: var(--s-surface-3);
+  color: #fff;
+}
+
+html[data-zororo-theme="dark"] .episodes,
+html[data-zororo-theme="dark"] .episode-box,
+html[data-zororo-theme="dark"] .episode-button-box,
+html[data-zororo-theme="dark"] .episode-plot,
+html[data-zororo-theme="dark"] .show-content__episode-list,
+html[data-zororo-theme="dark"] .show-content__episode-row {
+  background: var(--s-bg-elev);
+  border-color: var(--s-border);
+  color: var(--s-text);
+}
+html[data-zororo-theme="dark"] .show-content__episode-row:hover {
+  background: var(--s-surface-2);
+}
+html[data-zororo-theme="dark"] .episode-title,
+html[data-zororo-theme="dark"] .show-content__episode-link,
+html[data-zororo-theme="dark"] .show-content__episode-num {
+  color: var(--s-text);
+}
+html[data-zororo-theme="dark"] .episode-plot__text,
+html[data-zororo-theme="dark"] .series-card-desc {
+  color: var(--s-text-muted);
+}
+html[data-zororo-theme="dark"] .show-content__upcoming-episode .episode-title,
+html[data-zororo-theme="dark"] .show-content__upcoming-title {
+  color: var(--s-text-muted);
+}
+
+/* Subtitle language flags: the sprite tiles are designed for a light row, so
+   give them a subtle light chip to stay crisp on dark rows. */
+html[data-zororo-theme="dark"] #wrapper .flag-wrap,
+html[data-zororo-theme="dark"] #wrapper .subtitle-icons .js-subtitle-download {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+  padding: 1px 3px;
+}
+html[data-zororo-theme="dark"] #wrapper .subtitle-icons .flag {
+  opacity: 0.95;
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.5));
+}
+
+/* Small meta labels such as "Subtitles:" use #555/#888 on light. */
+html[data-zororo-theme="dark"] #wrapper .subtitle-icons p,
+html[data-zororo-theme="dark"] #wrapper .subtitle-icons span,
+html[data-zororo-theme="dark"] #wrapper .movie-content .subtitle-icons p,
+html[data-zororo-theme="dark"] #wrapper .movie-content .subtitle-icons span {
+  color: var(--s-text-muted) !important;
+}
+
+/* ===== Favorites / watched dropdown ===== */
+
+html[data-zororo-theme="dark"] .favorites,
+html[data-zororo-theme="dark"] .favorites-content,
+html[data-zororo-theme="dark"] .favorites-content-item,
+html[data-zororo-theme="dark"] .favorites-list,
+html[data-zororo-theme="dark"] .favorites-item,
+html[data-zororo-theme="dark"] .favorites-note {
+  background: var(--s-surface);
+  border-color: var(--s-border);
+  color: var(--s-text);
+}
+
+/* The site renders these chrome bars light (#ECEFF1 / #F5F6F7). */
+html[data-zororo-theme="dark"] .favorites-tabs,
+html[data-zororo-theme="dark"] .favorites-head,
+html[data-zororo-theme="dark"] .favorites-foot {
+  background: var(--s-surface) !important;
+  border-color: var(--s-border) !important;
+  color: var(--s-text);
+}
+html[data-zororo-theme="dark"] .favorites-tabs-control,
+html[data-zororo-theme="dark"] .favorites-tabs-item {
+  background: transparent;
+  color: var(--s-text-muted);
+  border-color: var(--s-border);
+}
+html[data-zororo-theme="dark"] .favorites-tabs-item.active .favorites-tabs-control {
+  background: var(--s-surface-3);
+  color: #fff;
+}
+html[data-zororo-theme="dark"] .favorites-control,
+html[data-zororo-theme="dark"] .favorites-mark a,
+html[data-zororo-theme="dark"] .favorites-tabs-more button {
+  color: var(--s-text-muted);
+}
+html[data-zororo-theme="dark"] .favorites-control:hover,
+html[data-zororo-theme="dark"] .favorites-mark a:hover,
+html[data-zororo-theme="dark"] .favorites-tabs-more button:hover {
+  color: var(--s-text);
+}
+
+/* perfect-scrollbar thumbs (site default #aaa). */
+html[data-zororo-theme="dark"] .ps-scrollbar-y,
+html[data-zororo-theme="dark"] .ps-scrollbar-x {
+  background-color: var(--s-border-strong) !important;
+}
+html[data-zororo-theme="dark"] .ps-scrollbar-y-rail,
+html[data-zororo-theme="dark"] .ps-scrollbar-x-rail {
+  background-color: transparent !important;
+}
+html[data-zororo-theme="dark"] .favorites-item:hover {
+  background: var(--s-surface-2);
+}
+html[data-zororo-theme="dark"] .movie-title,
+html[data-zororo-theme="dark"] .movie-description {
+  color: var(--s-text);
+}
+/* The site fades truncated title/description lines out to white; retarget the
+   fade to the row surface so it blends in (and on hover / pending-delete). */
+html[data-zororo-theme="dark"] .movie-title:after,
+html[data-zororo-theme="dark"] .movie-description:after {
+  background-image: linear-gradient(to right, rgba(34, 38, 51, 0), #222633) !important;
+}
+html[data-zororo-theme="dark"] .movie:not(.deleted):not(.removal):hover .movie-title:after,
+html[data-zororo-theme="dark"] .movie:not(.deleted):not(.removal):hover .movie-description:after {
+  background-image: linear-gradient(to right, rgba(42, 47, 61, 0), #2a2f3d) !important;
+}
+html[data-zororo-theme="dark"] .movie.removal .movie-title:after,
+html[data-zororo-theme="dark"] .movie.removal .movie-description:after,
+html[data-zororo-theme="dark"] .movie.deleted .movie-title:after,
+html[data-zororo-theme="dark"] .movie.deleted .movie-description:after {
+  background-image: linear-gradient(to right, rgba(74, 26, 26, 0), #4a1a1a) !important;
+}
+html[data-zororo-theme="dark"] .favorites-note-text,
+html[data-zororo-theme="dark"] .favorites-empty {
+  color: var(--s-text-muted);
+}
+html[data-zororo-theme="dark"] .favorites-count {
+  background: var(--s-blue);
+  color: #fff;
+}
+
+/* ===== Modals / popups / dialogs ===== */
+
+html[data-zororo-theme="dark"] .modal-container,
+html[data-zororo-theme="dark"] .modal-container-inner,
+html[data-zororo-theme="dark"] .modals,
+html[data-zororo-theme="dark"] .choose-popup,
+html[data-zororo-theme="dark"] .choose-popup-content,
+html[data-zororo-theme="dark"] .choose-popup-head,
+html[data-zororo-theme="dark"] .choose-popup-custom,
+html[data-zororo-theme="dark"] .faq-popup,
+html[data-zororo-theme="dark"] .card-popup {
+  background: var(--s-surface);
+  color: var(--s-text);
+  border-color: var(--s-border);
+}
+html[data-zororo-theme="dark"] .choose-popup-title,
+html[data-zororo-theme="dark"] .faq-popup h4 {
+  color: var(--s-text-strong);
+}
+html[data-zororo-theme="dark"] .choose-popup-close,
+html[data-zororo-theme="dark"] .modal-container a {
+  color: var(--s-text-muted);
+}
+
+/* ===== Media filters ===== */
+
+html[data-zororo-theme="dark"] .filters-window,
+html[data-zororo-theme="dark"] .filter-wrapper,
+html[data-zororo-theme="dark"] .filter,
+html[data-zororo-theme="dark"] .sub-translator-filter-box,
+html[data-zororo-theme="dark"] .sub-translator-filters-wrap,
+html[data-zororo-theme="dark"] .media-sidebar {
+  background: var(--s-surface);
+  color: var(--s-text);
+  border-color: var(--s-border);
+}
+html[data-zororo-theme="dark"] .filter-caption {
+  color: var(--s-text-muted);
+}
+
+/* ===== Dictionary ===== */
+
+html[data-zororo-theme="dark"] .dictionary-modal,
+html[data-zororo-theme="dark"] .dictionary-modal__container,
+html[data-zororo-theme="dark"] .dictionary-modal__body,
+html[data-zororo-theme="dark"] .dictionary-modal__header,
+html[data-zororo-theme="dark"] .dictionary-modal__row,
+html[data-zororo-theme="dark"] .dictionary-card,
+html[data-zororo-theme="dark"] .dictionary-cards,
+html[data-zororo-theme="dark"] .dictionary-dropdown__menu,
+html[data-zororo-theme="dark"] .dictionary-dropdown__menu-list-item {
+  background: var(--s-surface);
+  color: var(--s-text);
+  border-color: var(--s-border);
+}
+html[data-zororo-theme="dark"] .dictionary-modal__title,
+html[data-zororo-theme="dark"] .dictionary-card__text {
+  color: var(--s-text-strong);
+}
+html[data-zororo-theme="dark"] .dictionary-card__translation,
+html[data-zororo-theme="dark"] .dictionary-card__translation-placeholder,
+html[data-zororo-theme="dark"] .dictionary-modal__info {
+  color: var(--s-text-muted);
+}
+
+/* ===== Comments =====
+   The site nests these deeply (e.g. .comments .comments-body .comment.nested),
+   so this section uses !important to reliably win. */
+
+html[data-zororo-theme="dark"] .comments,
+html[data-zororo-theme="dark"] .comments-body,
+html[data-zororo-theme="dark"] .comments-header,
+html[data-zororo-theme="dark"] .comments-header .wrapper,
+html[data-zororo-theme="dark"] .comment,
+html[data-zororo-theme="dark"] .comments .comments-body .comment.nested,
+html[data-zororo-theme="dark"] .comment-body-wrapper,
+html[data-zororo-theme="dark"] .comment-content,
+html[data-zororo-theme="dark"] .comment .form-block,
+html[data-zororo-theme="dark"] .comments .form-block,
+html[data-zororo-theme="dark"] .nested-comments {
+  background: var(--s-bg-elev) !important;
+  color: var(--s-text);
+  border-color: var(--s-border) !important;
+}
+
+html[data-zororo-theme="dark"] .comments .form-block form .text-area,
+html[data-zororo-theme="dark"] .comments .comments-body .comment .reply-fakebox {
+  background-color: var(--s-input-bg) !important;
+  color: var(--s-text) !important;
+  border-color: var(--s-border) !important;
+}
+html[data-zororo-theme="dark"] .comments .form-block form .text-area:empty:before {
+  color: var(--s-text-muted) !important;
+}
+html[data-zororo-theme="dark"] .comments .form-block form::after {
+  border-right-color: var(--s-input-bg) !important;
+}
+html[data-zororo-theme="dark"] .comments .form-block form::before {
+  border-right-color: var(--s-border) !important;
+}
+
+html[data-zororo-theme="dark"] .comments .comments-body .show-button {
+  background-color: var(--s-surface) !important;
+  color: var(--s-text) !important;
+  border-color: var(--s-border) !important;
+}
+html[data-zororo-theme="dark"] .comments .comments-body .show-button:hover {
+  background-color: var(--s-surface-2) !important;
+}
+
+html[data-zororo-theme="dark"] .comment .text-content,
+html[data-zororo-theme="dark"] .comment .caption .name,
+html[data-zororo-theme="dark"] .comments .comments-body .comment .text-content {
+  color: var(--s-text);
+}
+html[data-zororo-theme="dark"] .comment .text-content a,
+html[data-zororo-theme="dark"] .comments .comments-body .comment .text-content a {
+  color: var(--s-link) !important;
+}
+html[data-zororo-theme="dark"] .comment .footer,
+html[data-zororo-theme="dark"] .comment .footer .time span,
+html[data-zororo-theme="dark"] .comment .caption .answer-for,
+html[data-zororo-theme="dark"] .comments .votes .upvote,
+html[data-zororo-theme="dark"] .comments .votes .downvote,
+html[data-zororo-theme="dark"] .comments-header .admin-toggle {
+  color: var(--s-text-muted) !important;
+}
+
+html[data-zororo-theme="dark"] .comment-sort-head,
+html[data-zororo-theme="dark"] .comment-sort-list,
+html[data-zororo-theme="dark"] .comments .comments-header .title .comment-sort-list,
+html[data-zororo-theme="dark"] .comment .settings-panel-dropdown {
+  background-color: var(--s-surface) !important;
+  color: var(--s-text) !important;
+  border-color: var(--s-border) !important;
+  box-shadow: var(--s-shadow) !important;
+}
+html[data-zororo-theme="dark"] .comment-sort-option:hover,
+html[data-zororo-theme="dark"] .comment .settings-panel-dropdown .dropdown-item:hover {
+  background-color: var(--s-surface-2) !important;
+}
+
+html[data-zororo-theme="dark"] .ui.comments .comment .metadata,
+html[data-zororo-theme="dark"] .ui.comments .comment .actions a {
+  color: var(--s-text-muted) !important;
+}
+html[data-zororo-theme="dark"] .ui.comments .comment .actions a.active,
+html[data-zororo-theme="dark"] .ui.comments .comment .actions a:hover {
+  color: var(--s-link-hover) !important;
+}
+
+/* ===== Pagination ===== */
+
+html[data-zororo-theme="dark"] .pagination,
+html[data-zororo-theme="dark"] .digg_pagination,
+html[data-zororo-theme="dark"] .dictionary-pagination,
+html[data-zororo-theme="dark"] .dictionary__pagination {
+  background: transparent;
+  color: var(--s-text);
+}
+html[data-zororo-theme="dark"] .pagination a,
+html[data-zororo-theme="dark"] .digg_pagination a,
+html[data-zororo-theme="dark"] .dictionary-pagination__btn {
+  background: var(--s-surface);
+  color: var(--s-text);
+  border-color: var(--s-border);
+}
+html[data-zororo-theme="dark"] .pagination a:hover,
+html[data-zororo-theme="dark"] .digg_pagination a:hover {
+  background: var(--s-surface-3);
+}
+html[data-zororo-theme="dark"] .page_info {
+  color: var(--s-text-muted);
+}
+
+/* ===== Forms ===== */
+
+html[data-zororo-theme="dark"] #wrapper input:not([type="checkbox"]):not([type="radio"]),
+html[data-zororo-theme="dark"] #wrapper textarea,
+html[data-zororo-theme="dark"] #wrapper select {
+  background: var(--s-input-bg);
+  color: var(--s-text);
+  border-color: var(--s-border);
+}
+html[data-zororo-theme="dark"] #wrapper input::placeholder,
+html[data-zororo-theme="dark"] #wrapper textarea::placeholder {
+  color: var(--s-text-muted);
+}
+html[data-zororo-theme="dark"] #wrapper input[type="checkbox"],
+html[data-zororo-theme="dark"] #wrapper input[type="radio"] {
+  accent-color: var(--s-blue);
+}
+
+/* Neutral / secondary buttons; keep the brand-colored ones (green/blue) as-is. */
+html[data-zororo-theme="dark"] #wrapper .btn--secondary,
+html[data-zororo-theme="dark"] #wrapper .btn-cancel,
+html[data-zororo-theme="dark"] #wrapper .btn-hide,
+html[data-zororo-theme="dark"] #wrapper .btn-new,
+html[data-zororo-theme="dark"] #wrapper .btn-myshows,
+html[data-zororo-theme="dark"] #wrapper .btn-wrap .btn:not(.btn-basic):not(.btn-blue) {
+  background: var(--s-surface-2);
+  color: var(--s-text);
+  border-color: var(--s-border);
+}
+html[data-zororo-theme="dark"] #wrapper .btn--secondary:hover {
+  background: var(--s-surface-3);
+}
+
+/* Brand action buttons that are anchors keep their own colors. The site's
+   .thin-btn.active white rule lives in a non-matching media query, so restore
+   the brand look explicitly here. */
+html[data-zororo-theme="dark"] #wrapper .thin-btn {
+  color: var(--s-text) !important;
+  border-color: var(--s-border-strong);
+}
+html[data-zororo-theme="dark"] #wrapper .thin-btn.active,
+html[data-zororo-theme="dark"] #wrapper .thin-btn:hover {
+  background: #31a480 !important;
+  border-color: #31a480 !important;
+  color: #fff !important;
+}
+
+/* ===== Footer ===== */
+
+html[data-zororo-theme="dark"] .site-footer,
+html[data-zororo-theme="dark"] .site-footer-content,
+html[data-zororo-theme="dark"] .site-footer-card,
+html[data-zororo-theme="dark"] .site-footer-title {
+  background: var(--s-bg-elev);
+  color: var(--s-text);
+  border-color: var(--s-border);
+}
+html[data-zororo-theme="dark"] .site-footer-item a {
+  color: var(--s-text-muted);
+}
+html[data-zororo-theme="dark"] .site-footer-item a:hover {
+  color: var(--s-link-hover);
+}
