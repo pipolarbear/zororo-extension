@@ -11,7 +11,7 @@ Automatically organizes episodes by season, skips already-downloaded files, lets
 you rate your watched content, comment translation, and supports 9 languages.
 
 [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.9.0-blue)](https://github.com/perplexedpigmy/zororo-extension)
+[![Version](https://img.shields.io/badge/version-1.10.0-blue)](https://github.com/perplexedpigmy/zororo-extension)
 [![Firefox](https://img.shields.io/badge/firefox-addon-orange)](https://addons.mozilla.org/en-US/firefox/addon/zororo/)
 [![Chrome](https://img.shields.io/badge/chrome-web__store-4285F4)](https://chromewebstore.google.com/detail/zororo/ibcmhfcmkmllpimlpplbmopfjollmecf)
 
@@ -86,6 +86,7 @@ Preferences on Firefox).
 | Setting                | Description                                                     |
 | ---------------------- | --------------------------------------------------------------- |
 | **Root directory**     | Base folder for all downloads (e.g. `OroroTV/`).                |
+| **Theme**              | `Light` (default) or `Dark`, applied to ororo.tv and the panel. |
 | **Subtitle languages** | Comma-separated language codes to download (e.g. `en, fr, de`). |
 | **Default subtitle**   | The language that gets the bare filename (no language suffix).  |
 | **Translate comments** | Show Translate links on comments.                               |

@@ -11,6 +11,7 @@ const DEFAULTS = {
   minimizeGesture: "dblclick",
   maximizeGesture: "dblclick",
   seasonRating: true,
+  theme: "light",
 };
 
 async function load() {
@@ -18,6 +19,7 @@ async function load() {
   const config = { ...DEFAULTS, ...data };
 
   document.getElementById("rootDir").value = config.rootDir;
+  document.getElementById("theme").value = config.theme === "dark" ? "dark" : "light";
 
   const checked = config.subtitleLangs || [];
   document.querySelectorAll("#subLangs input[type='checkbox']").forEach((cb) => {
@@ -76,8 +78,9 @@ async function save() {
   const minimizeGesture = document.getElementById("minimizeGesture").value;
   const maximizeGesture = document.getElementById("maximizeGesture").value;
   const seasonRating = document.getElementById("seasonRating").checked;
+  const theme = document.getElementById("theme").value === "dark" ? "dark" : "light";
 
-  await chrome.storage.sync.set({ rootDir, subtitleLangs, defaultSubLang, translateComments, translateDescription, translateEpisodes, closePanelOnClickOutside, minimizeGesture, maximizeGesture, seasonRating });
+  await chrome.storage.sync.set({ rootDir, subtitleLangs, defaultSubLang, translateComments, translateDescription, translateEpisodes, closePanelOnClickOutside, minimizeGesture, maximizeGesture, seasonRating, theme });
 
   const status = document.getElementById("status");
   status.textContent = "Saved.";
