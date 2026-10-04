@@ -211,6 +211,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       sendResponse({ ok: true });
       break;
 
+    case "open-options":
+      chrome.runtime.openOptionsPage();
+      sendResponse({ ok: true });
+      break;
+
     case "resolve-external-links": {
       (async () => {
         const { title, year } = msg;
