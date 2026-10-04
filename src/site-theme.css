@@ -148,6 +148,44 @@ html[data-zororo-theme="dark"] .submenu a:hover {
   color: #fff;
 }
 
+/* Notifications dropdown */
+html[data-zororo-theme="dark"] .submenu .submenu-footer,
+html[data-zororo-theme="dark"] #notification-window .footer-section {
+  background-color: var(--s-surface-2) !important;
+  border-color: var(--s-border) !important;
+  color: var(--s-text);
+}
+html[data-zororo-theme="dark"] .submenu .submenu-footer a,
+html[data-zororo-theme="dark"] #notification-window .footer-section > a {
+  color: var(--s-text-muted);
+}
+html[data-zororo-theme="dark"] #notification-window .submenu .notification-wrapper {
+  border-bottom-color: var(--s-border) !important;
+}
+html[data-zororo-theme="dark"] #notification-window .submenu .notification-wrapper .text-wrapper .caption {
+  color: var(--s-text) !important;
+}
+html[data-zororo-theme="dark"] #notification-window .submenu .notification-wrapper .text-wrapper .items .item span,
+html[data-zororo-theme="dark"] #notification-window .submenu .notification-wrapper .time-wrapper {
+  color: var(--s-text-muted) !important;
+}
+html[data-zororo-theme="dark"] #notification-window .submenu .notification-wrapper .notification-button {
+  background-color: var(--s-surface) !important;
+  border-color: var(--s-border-strong) !important;
+  color: var(--s-text-muted) !important;
+}
+html[data-zororo-theme="dark"] #notification-window .submenu .notification-wrapper .notification-button:hover,
+html[data-zororo-theme="dark"] #notification-window .submenu .notification-wrapper .notification-button:focus {
+  background-color: var(--s-surface-2) !important;
+}
+html[data-zororo-theme="dark"] .submenu-wrap .submenu-empty {
+  background-color: var(--s-surface) !important;
+}
+html[data-zororo-theme="dark"] .submenu-wrap .submenu-empty p,
+html[data-zororo-theme="dark"] .submenu-wrap .submenu-empty-btn span {
+  color: var(--s-text-muted) !important;
+}
+
 /* ===== Search ===== */
 
 html[data-zororo-theme="dark"] .search-box,
@@ -162,12 +200,30 @@ html[data-zororo-theme="dark"] .search-box-input {
   color: var(--s-text);
   border-color: var(--s-border);
 }
-html[data-zororo-theme="dark"] .search-results-item:hover {
-  background: var(--s-surface-2);
+html[data-zororo-theme="dark"] .search-results-item,
+html[data-zororo-theme="dark"] .search-result-loading,
+html[data-zororo-theme="dark"] .search-result-failed {
+  background-color: var(--s-surface) !important;
+  border-color: var(--s-border) !important;
+  color: var(--s-text);
 }
-html[data-zororo-theme="dark"] .search-results-item-text,
-html[data-zororo-theme="dark"] .search-results-item .subtitle {
-  color: var(--s-text-muted);
+html[data-zororo-theme="dark"] .search-results-item.active,
+html[data-zororo-theme="dark"] .search-results-item:hover {
+  background-color: var(--s-surface-2) !important;
+}
+html[data-zororo-theme="dark"] .search-results-item-text p {
+  color: var(--s-text) !important;
+}
+html[data-zororo-theme="dark"] .search-results-item-text p:last-child {
+  color: var(--s-text-muted) !important;
+}
+html[data-zororo-theme="dark"] .search-results-foot {
+  background-color: var(--s-surface-2) !important;
+}
+html[data-zororo-theme="dark"] .search-results-foot p,
+html[data-zororo-theme="dark"] .search-result-loading p,
+html[data-zororo-theme="dark"] .search-result-failed p {
+  color: var(--s-text-muted) !important;
 }
 
 /* ===== Landing sections ===== */
@@ -370,11 +426,15 @@ html[data-zororo-theme="dark"] .favorites-tabs-more button:hover {
 
 /* perfect-scrollbar thumbs (site default #aaa). */
 html[data-zororo-theme="dark"] .ps-scrollbar-y,
-html[data-zororo-theme="dark"] .ps-scrollbar-x {
+html[data-zororo-theme="dark"] .ps-scrollbar-x,
+html[data-zororo-theme="dark"] .ps__scrollbar-y,
+html[data-zororo-theme="dark"] .ps__scrollbar-x {
   background-color: var(--s-border-strong) !important;
 }
 html[data-zororo-theme="dark"] .ps-scrollbar-y-rail,
-html[data-zororo-theme="dark"] .ps-scrollbar-x-rail {
+html[data-zororo-theme="dark"] .ps-scrollbar-x-rail,
+html[data-zororo-theme="dark"] .ps__scrollbar-y-rail,
+html[data-zororo-theme="dark"] .ps__scrollbar-x-rail {
   background-color: transparent !important;
 }
 html[data-zororo-theme="dark"] .favorites-item:hover {
