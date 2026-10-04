@@ -1850,8 +1850,19 @@ const PANEL_STATE_KEY = "zororoPanelState";
     invertBtn.className = "btn-invert";
     invertBtn.id = "ororo-dl-invert";
     invertBtn.textContent = t("invert");
+    const settingsBtn = document.createElement("button");
+    settingsBtn.className = "btn-settings";
+    settingsBtn.id = "ororo-dl-settings";
+    settingsBtn.type = "button";
+    settingsBtn.textContent = "\u2699";
+    settingsBtn.title = "Settings";
+    settingsBtn.setAttribute("aria-label", "Settings");
+    settingsBtn.onclick = () => {
+      chrome.runtime.sendMessage({ type: "open-options" });
+    };
     actions2.appendChild(selBtn);
     actions2.appendChild(invertBtn);
+    actions2.appendChild(settingsBtn);
     wrap.appendChild(actions2);
 
     const updateSelectToggle = () => {
