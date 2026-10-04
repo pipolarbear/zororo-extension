@@ -1316,18 +1316,34 @@ const PANEL_STATE_KEY = "zororoPanelState";
     titleEl.textContent = "zororo";
     titleRow.appendChild(titleEl);
 
-    const extLinksEl = document.createElement("div");
-    extLinksEl.id = "ororo-dl-extlinks";
-    extLinksEl.className = "ext-links";
-    extLinksEl.style.display = "none";
-    titleRow.appendChild(extLinksEl);
+    const settingsBtn = document.createElement("button");
+    settingsBtn.id = "ororo-dl-settings-btn";
+    settingsBtn.className = "btn-settings";
+    settingsBtn.type = "button";
+    settingsBtn.textContent = "\u2699";
+    settingsBtn.title = "Settings";
+    settingsBtn.setAttribute("aria-label", "Settings");
+    settingsBtn.onclick = () => {
+      chrome.runtime.sendMessage({ type: "open-options" });
+    };
+    titleRow.appendChild(settingsBtn);
     panel.appendChild(titleRow);
+
+    const subtitleRow = document.createElement("div");
+    subtitleRow.className = "subtitle-row";
 
     const subEl = document.createElement("p");
     subEl.className = "subtitle";
     subEl.id = "ororo-dl-subtitle";
     subEl.textContent = t("loading");
-    panel.appendChild(subEl);
+    subtitleRow.appendChild(subEl);
+
+    const extLinksEl = document.createElement("div");
+    extLinksEl.id = "ororo-dl-extlinks";
+    extLinksEl.className = "ext-links";
+    extLinksEl.style.display = "none";
+    subtitleRow.appendChild(extLinksEl);
+    panel.appendChild(subtitleRow);
 
     const watchedEl = document.createElement("div");
     watchedEl.id = "ororo-dl-watched";
@@ -1850,19 +1866,8 @@ const PANEL_STATE_KEY = "zororoPanelState";
     invertBtn.className = "btn-invert";
     invertBtn.id = "ororo-dl-invert";
     invertBtn.textContent = t("invert");
-    const settingsBtn = document.createElement("button");
-    settingsBtn.className = "btn-settings";
-    settingsBtn.id = "ororo-dl-settings";
-    settingsBtn.type = "button";
-    settingsBtn.textContent = "\u2699";
-    settingsBtn.title = "Settings";
-    settingsBtn.setAttribute("aria-label", "Settings");
-    settingsBtn.onclick = () => {
-      chrome.runtime.sendMessage({ type: "open-options" });
-    };
     actions2.appendChild(selBtn);
     actions2.appendChild(invertBtn);
-    actions2.appendChild(settingsBtn);
     wrap.appendChild(actions2);
 
     const updateSelectToggle = () => {
