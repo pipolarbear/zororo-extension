@@ -437,8 +437,10 @@ html[data-zororo-theme="dark"] .ps__scrollbar-y-rail,
 html[data-zororo-theme="dark"] .ps__scrollbar-x-rail {
   background-color: transparent !important;
 }
-html[data-zororo-theme="dark"] .favorites-item:hover {
-  background: var(--s-surface-2);
+html[data-zororo-theme="dark"] .favorites-item:hover,
+html[data-zororo-theme="dark"] .movie:not(.deleted):not(.removal):hover,
+html[data-zororo-theme="dark"] .submenu .submenu-item:hover {
+  background-color: var(--s-surface-2) !important;
 }
 html[data-zororo-theme="dark"] .movie-title,
 html[data-zororo-theme="dark"] .movie-description {
