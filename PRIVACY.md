@@ -1,8 +1,8 @@
 # Privacy Policy for Zororo
 
-**Last updated:** July 2026
+**Last updated:** October 2026
 
-Zororo is a browser extension that downloads shows and movies from ororo.tv. This privacy policy explains what data the extension collects, how it is used, and your rights.
+Zororo is a browser extension that downloads shows and movies from ororo.tv and, on imdb.com, shows whether a title is available on ororo or lets you request it. This privacy policy explains what data the extension collects, how it is used, and your rights.
 
 ## Data Collection
 
@@ -18,12 +18,18 @@ All data is stored in your browser's `chrome.storage.local` and never leaves you
 | **Subtitle language preferences** | Which subtitle tracks to download |
 | **Rating history** | Your personal star ratings for shows/movies on ororo.tv |
 | **Download queue** | Temporary tracking of queued downloads |
+| **Theme** | Your Light/Dark preference |
+| **Panel state** | Whether the panel is collapsed |
+| **Content requests** | Titles you requested from the IMDb panel (title + date) |
+| **Catalog cache** | A temporary cached list of ororo titles, used to check availability |
 
 ### Network requests
 
 The extension makes requests to:
 
 - **ororo.tv API** (`https://ororo.tv/api/v2/...`) — to fetch show data, episode lists, and download URLs. These requests include your session cookies so ororo.tv can authenticate you.
+- **ororo.tv content requests** (`https://ororo.tv/en/content_requests`) — sent only when you click **Request content** in the IMDb panel. The request contains the title and IMDb ID you asked for, and your ororo.tv session cookies so ororo.tv can authenticate you.
+- **imdb.com** — on IMDb title pages the extension reads the page (title, type, year) to identify the movie/show. No data is sent; nothing leaves the page.
 - **Google Translate** (`translate.googleapis.com`) — to translate comments, descriptions, and episode plots when the user clicks "Translate". Only triggered by explicit user action. No personal data is transmitted.
 - **QR code server** (`https://api.qrserver.com/`) — to render a QR code for a crypto donation address when the user clicks a crypto pill in the support modal. Only triggered by explicit user action. No personal data is sent; the wallet address is public blockchain information.
 - **Chrome downloads API** — to trigger file downloads, running entirely in your browser.
@@ -34,7 +40,7 @@ The extension makes requests to:
 
 - No analytics, tracking, or telemetry
 - No personal information (name, email, IP address)
-- No browsing history outside of ororo.tv
+- No browsing history beyond the ororo.tv pages you use and the IMDb title pages where the panel appears
 - No crash reports or error logs are sent anywhere
 
 ## Third-Party Services

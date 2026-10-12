@@ -21,6 +21,8 @@ html[data-zororo-theme="dark"] {
   --s-link-hover: #9ccbff;
   --s-blue: #3ea4f5;
   --s-blue-soft: rgba(62, 164, 245, 0.18);
+  --s-primary: #3ea4f5;
+  --s-primary-hover: #5cb3f7;
   --s-green: #7ac943;
   --s-green-soft: rgba(122, 201, 67, 0.16);
   --s-red: #ec5840;
@@ -495,6 +497,53 @@ html[data-zororo-theme="dark"] .modal-container a {
   color: var(--s-text-muted);
 }
 
+/* Semantic UI modals: Request content / Send message */
+html[data-zororo-theme="dark"] .ui.modal {
+  background-color: var(--s-surface) !important;
+  border-color: var(--s-border) !important;
+  color: var(--s-text);
+}
+html[data-zororo-theme="dark"] .ui.modal > .header {
+  background-color: var(--s-surface) !important;
+  color: var(--s-text-strong) !important;
+  border-color: var(--s-border) !important;
+}
+html[data-zororo-theme="dark"] .ui.modal > .content {
+  background-color: var(--s-bg-elev) !important;
+  color: var(--s-text) !important;
+}
+html[data-zororo-theme="dark"] .ui.modal > .close {
+  color: var(--s-text-muted) !important;
+}
+html[data-zororo-theme="dark"] .ui.modal .ui.form input,
+html[data-zororo-theme="dark"] .ui.modal .ui.form textarea,
+html[data-zororo-theme="dark"] .ui.form input,
+html[data-zororo-theme="dark"] .ui.form textarea {
+  background-color: var(--s-input-bg) !important;
+  color: var(--s-text) !important;
+  border-color: var(--s-border) !important;
+}
+html[data-zororo-theme="dark"] .ui.modal .ui.form label,
+html[data-zororo-theme="dark"] .ui.form .field > label {
+  color: var(--s-text-muted) !important;
+}
+html[data-zororo-theme="dark"] .ui.form input::placeholder,
+html[data-zororo-theme="dark"] .ui.form textarea::placeholder {
+  color: var(--s-text-muted) !important;
+}
+html[data-zororo-theme="dark"] .ui.left.labeled.input > .label,
+html[data-zororo-theme="dark"] .ui.labeled.input > .label {
+  background-color: var(--s-surface-2) !important;
+  color: var(--s-text-muted) !important;
+  border-color: var(--s-border) !important;
+}
+html[data-zororo-theme="dark"] .ui.modal p {
+  color: var(--s-text) !important;
+}
+html[data-zororo-theme="dark"] .ui.modal a {
+  color: var(--s-link) !important;
+}
+
 /* ===== Media filters ===== */
 
 html[data-zororo-theme="dark"] .filters-window,
@@ -708,4 +757,305 @@ html[data-zororo-theme="dark"] .site-footer-item a {
 }
 html[data-zororo-theme="dark"] .site-footer-item a:hover {
   color: var(--s-link-hover);
+}
+
+/* ===== Account pages: sort multiselect, custom select, select2 ===== */
+
+/* Custom .select (notifications / gifts / settings) */
+html[data-zororo-theme="dark"] .select-head,
+html[data-zororo-theme="dark"] .select-open .select-head,
+html[data-zororo-theme="dark"] .select-white .select-head {
+  background-color: var(--s-input-bg) !important;
+  color: var(--s-text) !important;
+  border-color: var(--s-border) !important;
+}
+html[data-zororo-theme="dark"] .select-list,
+html[data-zororo-theme="dark"] .select-open .select-list,
+html[data-zororo-theme="dark"] .select-white .select-list {
+  background-color: var(--s-surface) !important;
+  border-color: var(--s-border) !important;
+  color: var(--s-text) !important;
+}
+html[data-zororo-theme="dark"] .select-item {
+  color: var(--s-text) !important;
+}
+html[data-zororo-theme="dark"] .select-item:hover {
+  background-color: var(--s-surface-2) !important;
+  color: var(--s-text) !important;
+}
+html[data-zororo-theme="dark"] .select-border.select-open .select-list {
+  border-color: var(--s-border) !important;
+}
+html[data-zororo-theme="dark"] .select-fade .select-head div:first-child:after,
+html[data-zororo-theme="dark"] .select-fade .select-item:after {
+  background-image: linear-gradient(to right, rgba(27, 30, 39, 0), #1b1e27) !important;
+}
+
+/* vue-multiselect (Sort by) */
+html[data-zororo-theme="dark"] .multiselect {
+  color: var(--s-text);
+}
+html[data-zororo-theme="dark"] .multiselect__tags,
+html[data-zororo-theme="dark"] .multiselect__input,
+html[data-zororo-theme="dark"] .multiselect__single {
+  background: var(--s-input-bg) !important;
+  color: var(--s-text) !important;
+  border-color: var(--s-border) !important;
+}
+html[data-zororo-theme="dark"] .multiselect__content-wrapper {
+  background: var(--s-surface) !important;
+  border-color: var(--s-border) !important;
+}
+html[data-zororo-theme="dark"] .multiselect__option {
+  background: var(--s-surface) !important;
+  color: var(--s-text) !important;
+}
+html[data-zororo-theme="dark"] .multiselect__option--highlight {
+  background: var(--s-surface-2) !important;
+  color: var(--s-text) !important;
+}
+html[data-zororo-theme="dark"] .multiselect__option--highlight:after {
+  background: var(--s-surface-2) !important;
+  color: var(--s-text) !important;
+}
+html[data-zororo-theme="dark"] .multiselect__option--selected {
+  background: var(--s-surface-2) !important;
+  color: var(--s-text) !important;
+}
+html[data-zororo-theme="dark"] .multiselect__placeholder {
+  color: var(--s-text-muted) !important;
+}
+html[data-zororo-theme="dark"] .multiselect__spinner {
+  background: var(--s-input-bg) !important;
+}
+html[data-zororo-theme="dark"] .multiselect__select:before {
+  border-color: var(--s-text-muted) transparent transparent transparent !important;
+}
+
+/* select2 (settings) */
+html[data-zororo-theme="dark"] .select2-dropdown,
+html[data-zororo-theme="dark"] .select2-container--default .select2-selection--single,
+html[data-zororo-theme="dark"] .select2-container--default .select2-selection--multiple {
+  background-color: var(--s-surface) !important;
+  border-color: var(--s-border) !important;
+  color: var(--s-text) !important;
+}
+html[data-zororo-theme="dark"] .select2-container--default .select2-selection--single .select2-selection__rendered {
+  color: var(--s-text) !important;
+}
+html[data-zororo-theme="dark"] .select2-container--default .select2-selection--single .select2-selection__placeholder {
+  color: var(--s-text-muted) !important;
+}
+html[data-zororo-theme="dark"] .select2-results__option {
+  background-color: var(--s-surface) !important;
+  color: var(--s-text) !important;
+}
+html[data-zororo-theme="dark"] .select2-container--default .select2-results__option--highlighted[aria-selected],
+html[data-zororo-theme="dark"] .select2-results__option--highlighted {
+  background-color: var(--s-surface-2) !important;
+  color: var(--s-text) !important;
+}
+html[data-zororo-theme="dark"] .select2-search--dropdown .select2-search__field {
+  background-color: var(--s-input-bg) !important;
+  color: var(--s-text) !important;
+  border-color: var(--s-border) !important;
+}
+
+/* ===== Subscription page ===== */
+html[data-zororo-theme="dark"] .subscription-advantages,
+html[data-zororo-theme="dark"] .subscription-buy,
+html[data-zororo-theme="dark"] #payment-form,
+html[data-zororo-theme="dark"] .subscription-card .wrap,
+html[data-zororo-theme="dark"] .subscription-history .inner,
+html[data-zororo-theme="dark"] .subscription-history .row.inner {
+  background-color: var(--s-surface) !important;
+  border-color: var(--s-border) !important;
+  color: var(--s-text) !important;
+}
+html[data-zororo-theme="dark"] .subscription-card .inner {
+  border-color: var(--s-border) !important;
+}
+html[data-zororo-theme="dark"] .subscription-card .box {
+  background-color: var(--s-surface) !important;
+  border-color: var(--s-border) !important;
+}
+html[data-zororo-theme="dark"] .subscription-card input:checked + .wrap .box {
+  background-color: var(--s-primary) !important;
+  border-color: var(--s-primary) !important;
+}
+html[data-zororo-theme="dark"] .subscription-card .part-btn .btn,
+html[data-zororo-theme="dark"] .subscription-card input:checked + .wrap .btn {
+  background-color: var(--s-primary) !important;
+  color: #fff !important;
+  opacity: 1 !important;
+}
+html[data-zororo-theme="dark"] .subscription-advantages .title,
+html[data-zororo-theme="dark"] .subscription-advantages .text,
+html[data-zororo-theme="dark"] .subscription-history,
+html[data-zororo-theme="dark"] .subscription-history .title {
+  color: var(--s-text) !important;
+}
+html[data-zororo-theme="dark"] .subscription-advantages .text span,
+html[data-zororo-theme="dark"] .subscription-card .note,
+html[data-zororo-theme="dark"] .subscription-card .price,
+html[data-zororo-theme="dark"] .subscription-card .price .rub-price {
+  color: var(--s-text-muted) !important;
+}
+html[data-zororo-theme="dark"] .subscription-history .title,
+html[data-zororo-theme="dark"] .subscription-history .line {
+  border-color: var(--s-border) !important;
+}
+
+/* ===== Referral page ===== */
+html[data-zororo-theme="dark"] .profile-referral .referral-proposal,
+html[data-zororo-theme="dark"] .profile-referral .referral-conditions,
+html[data-zororo-theme="dark"] .referral-proposal,
+html[data-zororo-theme="dark"] .referral-conditions,
+html[data-zororo-theme="dark"] .profile-stat-list .item,
+html[data-zororo-theme="dark"] #r-stat .item {
+  background-color: var(--s-surface) !important;
+  border-color: var(--s-border) !important;
+  color: var(--s-text) !important;
+}
+html[data-zororo-theme="dark"] .profile-referral .referral-link,
+html[data-zororo-theme="dark"] .referral-link {
+  background-color: var(--s-surface-2) !important;
+}
+html[data-zororo-theme="dark"] .profile-referral .referral-link input,
+html[data-zororo-theme="dark"] .referral-link input {
+  background-color: var(--s-surface-2) !important;
+  color: var(--s-text) !important;
+}
+html[data-zororo-theme="dark"] .profile-referral .referral-proposal .text,
+html[data-zororo-theme="dark"] .profile-referral .referral-conditions p,
+html[data-zororo-theme="dark"] .referral-note p {
+  color: var(--s-text) !important;
+}
+
+/* ===== Dictionary page ===== */
+html[data-zororo-theme="dark"] .dictionary__categories-list-item {
+  background-color: var(--s-surface) !important;
+  color: var(--s-text-muted) !important;
+}
+html[data-zororo-theme="dark"] .dictionary__categories-list-item.active {
+  background-color: var(--s-surface-2) !important;
+  color: var(--s-text) !important;
+}
+
+/* ===== Gifts page ===== */
+html[data-zororo-theme="dark"] .input-dynamic,
+html[data-zororo-theme="dark"] .gift-field .select-head {
+  background-color: var(--s-input-bg) !important;
+  color: var(--s-text) !important;
+  border-color: var(--s-border) !important;
+}
+html[data-zororo-theme="dark"] .select-head .icon,
+html[data-zororo-theme="dark"] .gift-field .select-head .icon {
+  background-color: var(--s-input-bg) !important;
+}
+html[data-zororo-theme="dark"] .js-mailer-wrapper,
+html[data-zororo-theme="dark"] .js-mailer-wrapper .header {
+  background-color: var(--s-surface) !important;
+  color: var(--s-text) !important;
+}
+html[data-zororo-theme="dark"] .js-mailer-wrapper table {
+  background-color: var(--s-surface) !important;
+  color: var(--s-text) !important;
+}
+/* Gift-card preview is a background PNG; clear it and fill dark (option A). */
+html[data-zororo-theme="dark"] .js-mailer-wrapper table[background*="giftcard"],
+html[data-zororo-theme="dark"] .js-mailer-wrapper table[background*="mailers"] {
+  background: var(--s-surface) !important;
+}
+/* The light-theme card shadow is baked into the PNG; reproduce it as a light
+   halo on the dark card so it still floats. */
+html[data-zororo-theme="dark"] .js-mailer-wrapper table.giftcard {
+  position: relative;
+  z-index: 0;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+/* The light card = white inner box + soft dark shadow hugging it. Reproduce the
+   same geometry as a light glow, filling only the inner box. */
+html[data-zororo-theme="dark"] .js-mailer-wrapper table.giftcard::before {
+  content: "";
+  position: absolute;
+  inset: 28px 28px 17px 28px;
+  z-index: -1;
+  background: var(--s-surface-2);
+  border-radius: 6px;
+  box-shadow:
+    0 0 12px rgba(255, 255, 255, 0.55),
+    0 0 26px rgba(255, 255, 255, 0.4),
+    0 0 44px rgba(255, 255, 255, 0.18);
+  pointer-events: none;
+}
+html[data-zororo-theme="dark"] .js-mailer-wrapper .editable-field {
+  color: var(--s-text) !important;
+}
+html[data-zororo-theme="dark"] .js-mailer-wrapper .js-letter-price,
+html[data-zororo-theme="dark"] .js-mailer-wrapper [style*="color: #333333"],
+html[data-zororo-theme="dark"] .js-mailer-wrapper [style*="color: #37474F"] {
+  color: var(--s-text) !important;
+}
+html[data-zororo-theme="dark"] .js-mailer-wrapper [style*="color: #808080"] {
+  color: var(--s-text-muted) !important;
+}
+html[data-zororo-theme="dark"] .js-gift-activation {
+  background: var(--s-primary) !important;
+  color: #fff !important;
+}
+
+/* ===== Notifications page ===== */
+html[data-zororo-theme="dark"] .notification-settings .item-title,
+html[data-zororo-theme="dark"] #n-common .item-title,
+html[data-zororo-theme="dark"] #n-specific .item-title {
+  background-color: var(--s-bg) !important;
+  color: var(--s-text) !important;
+}
+html[data-zororo-theme="dark"] .notification-settings .text {
+  color: var(--s-text-muted) !important;
+}
+
+/* ===== Profile / settings text ===== */
+html[data-zororo-theme="dark"] .profile,
+html[data-zororo-theme="dark"] .profile-content,
+html[data-zororo-theme="dark"] .profile-sidebar,
+html[data-zororo-theme="dark"] .profile-settings-column,
+html[data-zororo-theme="dark"] .profile-section-head .title {
+  color: var(--s-text);
+}
+html[data-zororo-theme="dark"] .profile-settings-column .field-content,
+html[data-zororo-theme="dark"] .profile-settings-column .select.select-white .select-head {
+  background-color: var(--s-input-bg) !important;
+  color: var(--s-text) !important;
+  border-color: var(--s-border) !important;
+}
+html[data-zororo-theme="dark"] .profile-local-menu .btn {
+  background-color: var(--s-surface) !important;
+  color: var(--s-text) !important;
+  border-color: var(--s-border) !important;
+}
+html[data-zororo-theme="dark"] .profile-local-menu .btn.active {
+  background-color: var(--s-primary) !important;
+  color: #fff !important;
+}
+html[data-zororo-theme="dark"] .profile-local-menu .btn:hover {
+  background-color: var(--s-surface-2) !important;
+}
+
+/* Account-page top nav */
+html[data-zororo-theme="dark"] .profile-menu {
+  background-color: var(--s-surface-2) !important;
+  border-bottom-color: var(--s-border) !important;
+}
+html[data-zororo-theme="dark"] .profile-menu-link {
+  color: var(--s-text-muted) !important;
+}
+html[data-zororo-theme="dark"] .profile-menu-link:hover,
+html[data-zororo-theme="dark"] .profile-menu-link.active {
+  color: var(--s-text) !important;
+}
+html[data-zororo-theme="dark"] .profile-menu-link.active {
+  border-bottom-color: var(--s-primary) !important;
 }

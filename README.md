@@ -8,10 +8,12 @@
 **One-click downloader for [ororo.tv](https://ororo.tv) shows and movies.**
 
 Automatically organizes episodes by season, skips already-downloaded files, lets
-you rate your watched content, comment translation, and supports 9 languages.
+you rate your watched content, comment translation, supports 9 languages, ships a
+full **dark mode** for ororo.tv, and adds an **IMDb availability panel** with
+content requests.
 
 [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.10.3-blue)](https://github.com/perplexedpigmy/zororo-extension)
+[![Version](https://img.shields.io/badge/version-1.11-blue)](https://github.com/perplexedpigmy/zororo-extension)
 [![Firefox](https://img.shields.io/badge/firefox-addon-orange)](https://addons.mozilla.org/en-US/firefox/addon/zororo/)
 [![Chrome](https://img.shields.io/badge/chrome-web__store-4285F4)](https://chromewebstore.google.com/detail/zororo/ibcmhfcmkmllpimlpplbmopfjollmecf)
 
@@ -32,8 +34,19 @@ you rate your watched content, comment translation, and supports 9 languages.
 - **Subtitle selection** — Choose which languages to download; default language
   gets a bare `.srt`, others get `.<lang>.srt`.
 - **Translation (optional)** — Translate comments, show descriptions, and episode plots to your UI language. Each can be disabled in Options.
+- **Dark mode** — A Light/Dark theme (Light by default) that reskins the whole
+  ororo.tv site and the Zororo panel.
+- **IMDb panel** — On any `imdb.com` movie/show page, a panel shows whether the
+  title is already on ororo (with a link to open it) or lets you **request it**.
+  If you've rated the title on ororo, your stars are shown on the panel too. The
+  panel follows your selected IMDb language.
+- **Content requests** — Request missing titles in one click; requests are
+  remembered (the panel shows a "REQUESTED" stamp) and listed in the popup's
+  **Requested** tab.
+- **Settings shortcut** — A gear in the panel opens the Options page.
 - **Minimizable panel** — Click × to collapse the panel to a small icon in the
-  top-right corner; click it to restore.
+  top-right corner; click it to restore. Configurable click/double-click
+  gestures minimize/maximize from anywhere on the page.
 - **In-app feedback** — Submit bug reports and feature requests directly from
   the support modal (powered by Formspree).
 - **9-language UI** — Detected from ororo.tv URL prefix: English, French,
@@ -75,6 +88,12 @@ you rate your watched content, comment translation, and supports 9 languages.
 4. **Translate** — click "Translate" on any comment, description, or episode plot.
 5. **Submit feedback** — open the support modal (heart icon), then click
    "Feature Request / Bug Report".
+6. **IMDb** — open any movie or show page on **imdb.com**. The Zororo panel shows
+   whether it's available on ororo (with an **Open on ororo** link) or a
+   **Request content** button. If you've rated the title on ororo, your stars
+   appear above the link. Already-requested titles show a "REQUESTED" stamp,
+   and all requests are listed in the popup's **Requested** tab. The panel is
+   shown in your selected IMDb language.
 
 ---
 
@@ -92,6 +111,7 @@ Preferences on Firefox).
 | **Translate comments** | Show Translate links on comments.                               |
 | **Translate description** | Show Translate link on show/movie description.              |
 | **Translate episodes** | Show Translate link on episode plot text.                       |
+| **Panel behavior**     | Minimize/maximize gestures (click / double-click) and click-outside control. |
 
 You can also **export / import your rated list** as JSON from the options page.
 
@@ -138,13 +158,17 @@ If you find this app useful, consider supporting its development:
 
 ## Privacy
 
-Zororo runs entirely on ororo.tv. **No data is collected, no analytics, no
-tracking.** All settings, ratings, and download history are stored locally in
-your browser's `chrome.storage.local`. External requests are made only for
-user-initiated actions:
+Zororo runs on **ororo.tv** (and **imdb.com** for the availability panel). **No
+data is collected, no analytics, no tracking.** All settings, ratings, requests,
+and download history are stored locally in your browser's `chrome.storage.local`.
+External requests are made only for user-initiated actions:
 
 | Service                    | Purpose                                      | Triggered by                                             |
 | -------------------------- | -------------------------------------------- | -------------------------------------------------------- |
+| `ororo.tv`                 | Fetch catalog / resolve downloads / send content requests | Using the extension, or requesting content from IMDb |
+| `imdb.com`                 | Read the title page to detect the show/movie | Visiting an IMDb title page                              |
+| `v2.sg.media-imdb.com`     | Resolve the official IMDb link for the panel | Show/movie page loads                                    |
+| `rottentomatoes.com`       | Resolve the official Rotten Tomatoes link    | Show/movie page loads                                    |
 | `api.qrserver.com`         | Render QR code for crypto donation addresses | Clicking a crypto pill in the support modal              |
 | `translate.googleapis.com` | Translate comments via Google Translate      | Clicking "Translate" on a comment                        |
 | `formspree.io`             | Submit bug reports / feature requests        | Submitting the feedback form in the support modal        |
