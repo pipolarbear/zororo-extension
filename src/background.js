@@ -60,6 +60,128 @@ function safePath(str) {
   return str.replace(/[<>:"/\\|?*]+/g, "").trim();
 }
 
+const CATALOG_KEY = "ororoCatalogV2";
+const CATALOG_TTL = 12 * 60 * 60 * 1000;
+const REQUESTS_KEY = "contentRequests";
+const WATCHED_KEY = "watched";
+
+function normalizeImdbId(id) {
+  if (!id) return null;
+  const m = String(id).match(/(\d+)/);
+  return m ? String(parseInt(m[1], 10)) : null;
+}
+
+function rawImdbId(imdbId) {
+  return /^tt\d+$/i.test(String(imdbId)) ? String(imdbId) : "tt" + (normalizeImdbId(imdbId) || "");
+}
+
+async function recordRequest(title, imdbId) {
+  const id = normalizeImdbId(imdbId);
+  if (!id) return;
+  const data = await chrome.storage.local.get(REQUESTS_KEY);
+  const map = data[REQUESTS_KEY] || {};
+  map[id] = { imdbId: rawImdbId(imdbId), title: title || "", requestedAt: Date.now() };
+  await chrome.storage.local.set({ [REQUESTS_KEY]: map });
+}
+
+async function clearRequest(imdbId) {
+  const id = normalizeImdbId(imdbId);
+  if (!id) return;
+  const data = await chrome.storage.local.get(REQUESTS_KEY);
+  const map = data[REQUESTS_KEY] || {};
+  if (map[id]) {
+    delete map[id];
+    await chrome.storage.local.set({ [REQUESTS_KEY]: map });
+  }
+}
+
+async function fetchOroroCatalog() {
+  const [showsRes, moviesRes] = await Promise.all([
+    fetch("https://ororo.tv/api/v2/shows", { credentials: "include" }),
+    fetch("https://ororo.tv/api/v2/movies", { credentials: "include" }),
+  ]);
+  if (showsRes.status === 401 || moviesRes.status === 401) return { loggedIn: false };
+  const shows = showsRes.ok ? (await showsRes.json()).shows || [] : [];
+  const movies = moviesRes.ok ? (await moviesRes.json()).movies || [] : [];
+  const map = {};
+  for (const s of shows) {
+    const k = normalizeImdbId(s.imdb_id);
+    if (k) map[k] = { type: "show", slug: s.slug, name: s.name, id: s.id };
+  }
+  for (const m of movies) {
+    const k = normalizeImdbId(m.imdb_id);
+    if (k) map[k] = { type: "movie", slug: m.slug || slugify(m.name), name: m.name, id: m.id };
+  }
+  return { loggedIn: true, map, fetchedAt: Date.now() };
+}
+
+async function getOroroCatalog() {
+  const data = await chrome.storage.local.get(CATALOG_KEY);
+  const cached = data[CATALOG_KEY];
+  if (cached && cached.fetchedAt && Date.now() - cached.fetchedAt < CATALOG_TTL) return cached;
+  const fresh = await fetchOroroCatalog();
+  if (fresh.loggedIn) await chrome.storage.local.set({ [CATALOG_KEY]: fresh });
+  return fresh;
+}
+
+async function getWatchedRating(hit) {
+  if (!hit) return 0;
+  const data = await chrome.storage.local.get(WATCHED_KEY);
+  const watched = data[WATCHED_KEY] || [];
+  const prefix = hit.type === "movie" ? "movie_" : "show_";
+  const entry = watched.find(
+    (w) => w && w.type === hit.type && (w.id === prefix + hit.id || (hit.slug && w.slug === hit.slug))
+  );
+  const rating = entry ? Number(entry.rating) : 0;
+  return rating > 0 ? rating : 0;
+}
+
+async function checkOroro(imdbId) {
+  const id = normalizeImdbId(imdbId);
+  if (!id) return { loggedIn: true, found: false };
+  const catalog = await getOroroCatalog();
+  if (!catalog.loggedIn) return { loggedIn: false };
+  const hit = catalog.map[id];
+  if (hit) {
+    await clearRequest(imdbId);
+    return { loggedIn: true, found: true, ...hit, rating: await getWatchedRating(hit) };
+  }
+  const data = await chrome.storage.local.get(REQUESTS_KEY);
+  const rec = (data[REQUESTS_KEY] || {})[id];
+  return { loggedIn: true, found: false, requested: !!rec, requestedAt: rec ? rec.requestedAt : null };
+}
+
+async function requestContent(title, imdbId) {
+  const raw = /^tt\d+$/i.test(String(imdbId)) ? String(imdbId) : "tt" + (normalizeImdbId(imdbId) || "");
+  const modalResp = await fetch("https://ororo.tv/en/modals/contentRequest", { credentials: "include" });
+  if (modalResp.status === 401) return { ok: false, loggedIn: false };
+  const html = await modalResp.text();
+  const m = html.match(/name="authenticity_token"[^>]*value="([^"]+)"/);
+  const body = new URLSearchParams();
+  if (m) body.set("authenticity_token", m[1]);
+  body.set("content_request[title]", title || "");
+  body.set("content_request[link]", raw);
+  const resp = await fetch("https://ororo.tv/en/content_requests", {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+      "X-Requested-With": "XMLHttpRequest",
+      "Accept": "application/json, text/javascript, */*; q=0.01",
+    },
+    body: body.toString(),
+  });
+  if (resp.status === 403) {
+    const payload = encodeURIComponent(JSON.stringify({ title: title || "", imdbId: raw }));
+    chrome.tabs.create({ url: "https://ororo.tv/en#zororo-request=" + payload });
+    await recordRequest(title, imdbId);
+    return { ok: true, viaTab: true };
+  }
+  if (!resp.ok) return { ok: false, error: "http-" + resp.status };
+  await recordRequest(title, imdbId);
+  return { ok: true };
+}
+
 async function processNext() {
   await loadQueue();
   if (processing) return;
@@ -215,6 +337,28 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       chrome.runtime.openOptionsPage();
       sendResponse({ ok: true });
       break;
+
+    case "check-ororo": {
+      (async () => {
+        try {
+          sendResponse(await checkOroro(msg.imdbId));
+        } catch (e) {
+          sendResponse({ loggedIn: false, error: e.message });
+        }
+      })();
+      return true;
+    }
+
+    case "request-content": {
+      (async () => {
+        try {
+          sendResponse(await requestContent(msg.title, msg.imdbId));
+        } catch (e) {
+          sendResponse({ ok: false, error: e.message });
+        }
+      })();
+      return true;
+    }
 
     case "resolve-external-links": {
       (async () => {

@@ -34,6 +34,7 @@ async function init() {
       activeTab = btn.dataset.tab;
       document.getElementById("tab-" + activeTab).classList.add("active");
       if (activeTab === "watched") renderWatched();
+      if (activeTab === "requested") renderRequested();
     };
   });
 
@@ -189,6 +190,54 @@ async function renderWatched() {
     fragment.appendChild(div);
   }
 
+  listEl.appendChild(fragment);
+}
+
+async function renderRequested() {
+  const data = await chrome.storage.local.get("contentRequests");
+  const map = data.contentRequests || {};
+  const items = Object.entries(map)
+    .map(([id, r]) => ({ id, ...r }))
+    .sort((a, b) => (b.requestedAt || 0) - (a.requestedAt || 0));
+  const listEl = document.getElementById("requested-list");
+  listEl.replaceChildren();
+
+  if (items.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.appendChild(document.createTextNode("No content requests yet."));
+    empty.appendChild(document.createElement("br"));
+    empty.appendChild(document.createTextNode("Request a title from its IMDb page."));
+    listEl.appendChild(empty);
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+  for (const it of items) {
+    const div = document.createElement("div");
+    div.className = "item watched-item";
+
+    const info = document.createElement("div");
+    info.className = "info";
+    const name = document.createElement("div");
+    name.className = "name";
+    name.textContent = it.title || it.imdbId;
+    const date = document.createElement("div");
+    date.className = "watched-date";
+    date.textContent = new Date(it.requestedAt || Date.now()).toLocaleDateString();
+    info.appendChild(name);
+    info.appendChild(date);
+
+    const link = document.createElement("a");
+    link.className = "watched-link";
+    link.href = "https://www.imdb.com/title/" + it.imdbId + "/";
+    link.target = "_blank";
+    link.rel = "noopener";
+    link.appendChild(info);
+
+    div.appendChild(link);
+    fragment.appendChild(div);
+  }
   listEl.appendChild(fragment);
 }
 

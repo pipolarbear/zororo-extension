@@ -55,10 +55,27 @@
         "https://ororo.tv/*"
       ],
       "js": [
+        "src/i18n.js",
+        "src/donate.js",
         "src/content.js"
       ],
       "css": [
         "src/content.css"
+      ]
+    },
+    {
+      "matches": [
+        "https://www.imdb.com/title/*",
+        "https://www.imdb.com/*/title/*"
+      ],
+      "js": [
+        "src/i18n.js",
+        "src/donate.js",
+        "src/imdb.js"
+      ],
+      "css": [
+        "src/content.css",
+        "src/imdb.css"
       ]
     }
   ],
@@ -68,11 +85,14 @@
         "icons/zoro.png"
       ],
       "matches": [
-        "https://ororo.tv/*"
+        "https://ororo.tv/*",
+        "https://www.imdb.com/*"
       ]
     }
   ],
   "host_permissions": [
+    "https://ororo.tv/*",
+    "https://www.imdb.com/*",
     "https://v2.sg.media-imdb.com/*",
     "https://www.rottentomatoes.com/*"
   ],

@@ -1,0 +1,118 @@
+#ororo-dl-panel .imdb-state {
+  font-size: 13px;
+  color: #ccc;
+  margin: 0 0 10px;
+}
+
+#ororo-dl-panel .imdb-action {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: opacity 0.15s;
+}
+
+#ororo-dl-panel .imdb-action:hover {
+  opacity: 0.85;
+}
+
+#ororo-dl-panel .imdb-open,
+#ororo-dl-panel .imdb-login {
+  background: #6c5ce7;
+  color: #fff;
+}
+
+#ororo-dl-panel .imdb-login {
+  background: #2196f3;
+}
+
+#ororo-dl-panel .imdb-request {
+  background: #2d2d4e;
+  color: #ccc;
+}
+
+#ororo-dl-panel .imdb-request:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+#ororo-dl-panel .imdb-rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 15px;
+}
+
+#ororo-dl-panel .imdb-rating-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #999;
+}
+
+#ororo-dl-panel .imdb-rating .ororo-star-row {
+  line-height: 1;
+}
+
+#ororo-dl-panel .imdb-stamp {
+  position: absolute;
+  inset: 0 0 64px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1a1a2e;
+  border-radius: 12px;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 3;
+}
+
+#ororo-dl-panel .title-row {
+  position: relative;
+  z-index: 4;
+}
+
+#ororo-dl-panel .panel-footer {
+  position: relative;
+  z-index: 4;
+}
+
+#ororo-dl-panel.donate-open .imdb-stamp {
+  display: none !important;
+}
+
+#ororo-dl-panel .imdb-stamp span {
+  transform: rotate(-16deg);
+  padding: 8px 18px;
+  border: 3px solid #2ecc71;
+  border-radius: 10px;
+  color: #2ecc71;
+  background: rgba(46, 204, 113, 0.12);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+#ororo-dl-panel .imdb-stamp-age {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 600;
+  font-style: normal;
+  letter-spacing: 2px;
+  opacity: 0.85;
+  text-align: center;
+  text-transform: none;
+}
