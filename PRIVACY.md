@@ -6,7 +6,7 @@ Zororo is a browser extension that downloads shows and movies from ororo.tv and,
 
 ## Data Collection
 
-**Zororo does not collect, transmit, or share any personal data.** The extension operates entirely within your browser.
+**Zororo does not collect personal data.** The extension operates entirely within your browser, except for the optional **anonymous usage statistics** described below (Chrome build only), which you can turn off at any time.
 
 ### What is stored locally
 
@@ -23,7 +23,33 @@ All data is stored in your browser's `chrome.storage.local` and never leaves you
 | **Content requests** | Titles you requested from the IMDb panel (title + date) |
 | **Catalog cache** | A temporary cached list of ororo titles, used to check availability |
 
-### Network requests
+### Anonymous usage statistics (Chrome only)
+
+To understand which features are used, the **Chrome** build sends anonymous
+usage events to a Google Form (which writes them to a private spreadsheet the
+developer can read). This is **not** included in the Firefox build, and you can
+turn it off in the options page (**Anonymous usage stats**).
+
+What is sent, and when:
+
+- **Events:** extension install/update, a daily "active" ping, content requests
+  (title + IMDb id), downloads started (title, media type, episode count), and
+  settings changes (the setting name and its new value), plus a one-time event
+  when you disable this.
+- **Identifier:** a **rotating** anonymous id. A random secret is generated and
+  stored only on your device; the id sent is an HMAC of that secret with the
+  current ISO week. Events in the same week share an id (so usage can be
+  counted per user), but **the id changes every week and cannot be linked across
+  weeks**. It is never derived from your account or any personal data.
+- **Version:** the extension version.
+- **Notably NOT sent:** your name, email, or ororo account; your IP is not a
+  field we send, though the receiving endpoint (Google) necessarily sees the
+  connection like any web request. Free-text values (e.g. your download folder
+  name) are **not** sent — only the fact that the setting changed.
+
+The endpoint is a Google Form (`docs.google.com/forms`). Turning the option off
+stops all further sending (a single final event records the opt-out).
+
 
 The extension makes requests to:
 
@@ -38,9 +64,9 @@ The extension makes requests to:
 
 ### What is NOT collected
 
-- No analytics, tracking, or telemetry
-- No personal information (name, email, IP address)
+- No personal information (name, email, or account)
 - No browsing history beyond the ororo.tv pages you use and the IMDb title pages where the panel appears
+- No free-text values (e.g. your download folder name)
 - No crash reports or error logs are sent anywhere
 
 ## Third-Party Services
@@ -53,8 +79,9 @@ The extension uses the following third-party services:
 - **Formspree** (`formspree.io`) — forwards feedback form submissions from the support modal to the developer's email. Only triggered by explicit user action. No personal data is transmitted beyond what the user voluntarily enters (title, description, page URL).
 - **IMDb** (`v2.sg.media-imdb.com`) — resolves and links the official IMDb page for the current show/movie. No tracking or analytics; only title queries are sent.
 - **Rotten Tomatoes** (`rottentomatoes.com`) — resolves and links the official Rotten Tomatoes page for the current show/movie. No tracking or analytics; only title queries are sent.
+- **Google Forms** (`docs.google.com/forms`) — receives the anonymous usage statistics described above (Chrome build only). No account and no personal data; delivery is anonymous and uses a weekly-rotating id.
 
-No other third-party services, SDKs, analytics frameworks, or tracking are integrated.
+No other third-party services, SDKs, analytics frameworks, or tracking are integrated. Zororo contains no advertising or third-party analytics SDKs.
 
 ## Data Sharing
 
