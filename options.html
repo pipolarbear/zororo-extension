@@ -42,6 +42,15 @@
     .checkbox-group { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
     .checkbox-group label { font-weight: 400; display: flex; align-items: center; gap: 4px; }
     .checkbox-group input { accent-color: #6c5ce7; }
+    .tabs { display: flex; border-bottom: 1px solid #2a2a4e; background: #0f0f1e; border-radius: 8px 8px 0 0; margin-bottom: 10px; }
+    .tabs button { flex: 1; padding: 8px 12px; border: none; background: none; color: #666; font-size: 12px; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; }
+    .tabs button:hover { color: #aaa; }
+    .tabs button.active { color: #fff; border-bottom-color: #6c5ce7; }
+    .size-row { display: flex; align-items: center; gap: 24px; margin-top: 8px; }
+    input[type="range"].vslider { writing-mode: vertical-lr; direction: rtl; width: 32px; height: 160px; accent-color: #6c5ce7; cursor: pointer; }
+    .preview-wrap { width: 160px; height: 160px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .collapse-preview { display: flex; align-items: center; justify-content: center; background: #1a1a2e; border: 1px solid #333; border-radius: 16px; overflow: hidden; box-sizing: border-box; }
+    .collapse-preview img { display: block; }
   </style>
 </head>
 <body>
@@ -129,7 +138,33 @@
     <div class="hint">Clicking or double-clicking outside the panel minimizes / maximizes it according to the gestures above. When disabled, panel size is controlled only via the panel itself.</div>
   </div>
 
-  <button id="save">Save</button>
+  <div class="field">
+    <label>Collapsed panel size</label>
+    <div class="tabs" id="size-tabs">
+      <button type="button" class="active" data-site="ororo">Ororo</button>
+      <button type="button" data-site="imdb">IMDb</button>
+    </div>
+    <div class="size-row">
+      <input type="range" class="vslider" id="size-slider" min="0" max="8" step="1" />
+      <div class="preview-wrap">
+        <div class="collapse-preview" id="collapse-preview">
+          <img src="icons/zoro.png" alt="Zororo" />
+        </div>
+      </div>
+    </div>
+    <div class="hint">Size of the panel when collapsed (smallest = 1/4, largest = full size). Saved automatically, per site.</div>
+  </div>
+
+  <!-- @telemetry-start -->
+  <div class="field">
+    <label>Anonymous usage stats</label>
+    <div class="checkbox-group">
+      <label><input type="checkbox" id="telemetryEnabled" checked /> Share anonymous usage statistics</label>
+    </div>
+    <div class="hint">Sends anonymous event counts (settings changes, downloads, content requests) using a rotating weekly id. No account, no personal data. Uncheck to stop.</div>
+  </div>
+  <!-- @telemetry-end -->
+
   <div id="status"></div>
 
   <hr style="border:1px solid #1a1a3e; margin:24px 0;" />

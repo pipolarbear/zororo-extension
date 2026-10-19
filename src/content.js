@@ -448,6 +448,7 @@ const PANEL_STATE_KEY = "zororoPanelState";
       translateEpisodes: true,
       seasonRating: true,
       theme: "light",
+      collapsedSizeOroro: 100,
     };
     try {
       return await new Promise((r) => chrome.storage.sync.get(defaults, r));
@@ -457,6 +458,12 @@ const PANEL_STATE_KEY = "zororoPanelState";
   }
 
   const THEME_KEY = "zororoTheme";
+
+  function setCollapsedScale(panel, size) {
+    const n = Number(size);
+    const scale = n >= 25 && n <= 100 ? n / 100 : 1;
+    panel.style.setProperty("--zoro-collapsed-scale", String(scale));
+  }
 
   function applyTheme(theme) {
     const value = theme === "dark" ? "dark" : "light";
@@ -630,6 +637,13 @@ const PANEL_STATE_KEY = "zororoPanelState";
     collapseIcon.src = chrome.runtime.getURL("icons/zoro.png");
     collapseIcon.alt = "Zororo";
     panel.appendChild(collapseIcon);
+
+    setCollapsedScale(panel, config.collapsedSizeOroro);
+    try {
+      chrome.storage.onChanged.addListener((changes, area) => {
+        if (area === "sync" && changes.collapsedSizeOroro) setCollapsedScale(panel, changes.collapsedSizeOroro.newValue);
+      });
+    } catch { }
 
     closeBtn.onclick = (e) => {
       e.stopPropagation();

@@ -104,6 +104,18 @@
 
   if (window.ZororoDonate) window.ZororoDonate.build(panel, { t });
 
+  function setCollapsedScale(size) {
+    const n = Number(size);
+    const scale = n >= 25 && n <= 100 ? n / 100 : 1;
+    panel.style.setProperty("--zoro-collapsed-scale", String(scale));
+  }
+  chrome.storage.sync.get({ collapsedSizeImdb: 100 }, (cfg) => setCollapsedScale(cfg.collapsedSizeImdb));
+  try {
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area === "sync" && changes.collapsedSizeImdb) setCollapsedScale(changes.collapsedSizeImdb.newValue);
+    });
+  } catch { }
+
   const state = document.createElement("p");
   state.className = "imdb-state";
   state.textContent = t("imdbChecking");

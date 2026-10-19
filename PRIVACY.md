@@ -6,22 +6,64 @@ Zororo is a browser extension that downloads shows and movies from ororo.tv and,
 
 ## Data Collection
 
-**Zororo does not collect, transmit, or share any personal data.** The extension operates entirely within your browser.
+**Zororo does not collect personal data.** The extension operates entirely within your browser, except for the optional **anonymous usage statistics** described below (Chrome build only), which you can turn off at any time.
 
-### What is stored locally
+### What is stored
 
-All data is stored in your browser's `chrome.storage.local` and never leaves your device:
+Nothing is stored off your device. Preferences live in `chrome.storage.sync`
+(your browser may sync these across your signed-in devices); operational data
+lives in `chrome.storage.local`.
+
+**Preferences** (`chrome.storage.sync`)
 
 | Data | Purpose |
 |---|---|
 | **Root directory** | Where downloaded files are saved on your computer |
 | **Subtitle language preferences** | Which subtitle tracks to download |
+| **Translation toggles** | Whether to show Translate links for comments/descriptions/plots |
+| **Season rating toggle** | Whether to rate each completed season |
+| **Theme** | Your Light/Dark preference |
+| **Panel behavior** | Minimize/maximize gestures |
+| **Collapsed panel size** | Panel size per site (ororo / IMDb) when minimized |
+| **Anonymous usage stats** | Whether to send the anonymous statistics described below |
+
+**Local data** (`chrome.storage.local`)
+
+| Data | Purpose |
+|---|---|
 | **Rating history** | Your personal star ratings for shows/movies on ororo.tv |
 | **Download queue** | Temporary tracking of queued downloads |
-| **Theme** | Your Light/Dark preference |
 | **Panel state** | Whether the panel is collapsed |
 | **Content requests** | Titles you requested from the IMDb panel (title + date) |
 | **Catalog cache** | A temporary cached list of ororo titles, used to check availability |
+| **Telemetry salt** | A random local secret used to derive the rotating anonymous id (never transmitted) |
+
+### Anonymous usage statistics (Chrome only)
+
+To understand which features are used, the **Chrome** build sends anonymous
+usage events to a Google Form (which writes them to a private spreadsheet the
+developer can read). This is **not** included in the Firefox build, and you can
+turn it off in the options page (**Anonymous usage stats**).
+
+What is sent, and when:
+
+- **Events:** extension install/update, a daily "active" ping, content requests
+  (title + IMDb id), downloads started (title, media type, episode count), and
+  settings changes (the setting name and its new value), plus a one-time event
+  when you disable this.
+- **Identifier:** a **rotating** anonymous id. A random secret is generated and
+  stored only on your device; the id sent is an HMAC of that secret with the
+  current ISO week. Events in the same week share an id (so usage can be
+  counted per user), but **the id changes every week and cannot be linked across
+  weeks**. It is never derived from your account or any personal data.
+- **Version:** the extension version.
+- **Notably NOT sent:** your name, email, or ororo account; your IP is not a
+  field we send, though the receiving endpoint (Google) necessarily sees the
+  connection like any web request. Free-text values (e.g. your download folder
+  name) are **not** sent — only the fact that the setting changed.
+
+The endpoint is a Google Form (`docs.google.com/forms`). Turning the option off
+stops all further sending (a single final event records the opt-out).
 
 ### Network requests
 
@@ -35,12 +77,13 @@ The extension makes requests to:
 - **Chrome downloads API** — to trigger file downloads, running entirely in your browser.
 - **IMDb** (`https://v2.sg.media-imdb.com/suggestion/x/...`) — to look up and link the official IMDb page for the current show/movie. Triggered when a show/movie page loads. No login or personal data; only the normalized title slug is sent as part of the URL.
 - **Rotten Tomatoes** (`https://www.rottentomatoes.com/...`) — same purpose: resolve and link the official Rotten Tomatoes page for the current show/movie. Triggered on page load. No login or personal data.
+- **Google Forms** (`https://docs.google.com/forms/...`) — receives the anonymous usage statistics (Chrome build only) described above, using a weekly-rotating id. Turning off **Anonymous usage stats** stops these requests.
 
 ### What is NOT collected
 
-- No analytics, tracking, or telemetry
-- No personal information (name, email, IP address)
+- No personal information (name, email, or account)
 - No browsing history beyond the ororo.tv pages you use and the IMDb title pages where the panel appears
+- No free-text values (e.g. your download folder name)
 - No crash reports or error logs are sent anywhere
 
 ## Third-Party Services
@@ -53,12 +96,15 @@ The extension uses the following third-party services:
 - **Formspree** (`formspree.io`) — forwards feedback form submissions from the support modal to the developer's email. Only triggered by explicit user action. No personal data is transmitted beyond what the user voluntarily enters (title, description, page URL).
 - **IMDb** (`v2.sg.media-imdb.com`) — resolves and links the official IMDb page for the current show/movie. No tracking or analytics; only title queries are sent.
 - **Rotten Tomatoes** (`rottentomatoes.com`) — resolves and links the official Rotten Tomatoes page for the current show/movie. No tracking or analytics; only title queries are sent.
+- **Google Forms** (`docs.google.com/forms`) — receives the anonymous usage statistics described above (Chrome build only). No account and no personal data; delivery is anonymous and uses a weekly-rotating id.
 
-No other third-party services, SDKs, analytics frameworks, or tracking are integrated.
+No other third-party services, SDKs, analytics frameworks, or tracking are integrated. Zororo contains no advertising or third-party analytics SDKs.
 
 ## Data Sharing
 
-Zororo does not sell, share, or transfer any user data to third parties.
+Zororo does not sell your data. It does not share or transfer it to third
+parties, except for the anonymous usage statistics described above (Chrome
+build only), which are sent to Google Forms and are not linked to your identity.
 
 ## Changes to This Policy
 

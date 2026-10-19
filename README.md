@@ -13,7 +13,7 @@ full **dark mode** for ororo.tv, and adds an **IMDb availability panel** with
 content requests.
 
 [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.11-blue)](https://github.com/perplexedpigmy/zororo-extension)
+[![Version](https://img.shields.io/badge/version-1.11.1-blue)](https://github.com/perplexedpigmy/zororo-extension)
 [![Firefox](https://img.shields.io/badge/firefox-addon-orange)](https://addons.mozilla.org/en-US/firefox/addon/zororo/)
 [![Chrome](https://img.shields.io/badge/chrome-web__store-4285F4)](https://chromewebstore.google.com/detail/zororo/ibcmhfcmkmllpimlpplbmopfjollmecf)
 
@@ -112,8 +112,12 @@ Preferences on Firefox).
 | **Translate description** | Show Translate link on show/movie description.              |
 | **Translate episodes** | Show Translate link on episode plot text.                       |
 | **Panel behavior**     | Minimize/maximize gestures (click / double-click) and click-outside control. |
+| **Collapsed panel size** | Size of the panel when collapsed (1/4 to full), set independently per site. |
+| **Anonymous usage stats** | Send anonymous usage statistics (Chrome only). On by default. |
 
 You can also **export / import your rated list** as JSON from the options page.
+
+> Settings save automatically — there's no Save button.
 
 ---
 
@@ -158,10 +162,17 @@ If you find this app useful, consider supporting its development:
 
 ## Privacy
 
-Zororo runs on **ororo.tv** (and **imdb.com** for the availability panel). **No
-data is collected, no analytics, no tracking.** All settings, ratings, requests,
-and download history are stored locally in your browser's `chrome.storage.local`.
-External requests are made only for user-initiated actions:
+Zororo runs on **ororo.tv** (and **imdb.com** for the availability panel).
+Settings are stored in `chrome.storage.sync` (synced by your browser across your
+signed-in devices); your data (ratings, requests, download history) is stored in
+`chrome.storage.local`.
+
+The **Chrome** build also sends **anonymous usage statistics** (Chrome build
+only) to help understand which features are used — you can turn this off in the
+options page. It uses a weekly-rotating anonymous id, sends no personal data and
+no free-text values, and is excluded entirely from the Firefox build. See
+[PRIVACY.md](PRIVACY.md). External requests are otherwise made only for
+user-initiated actions:
 
 | Service                    | Purpose                                      | Triggered by                                             |
 | -------------------------- | -------------------------------------------- | -------------------------------------------------------- |
@@ -173,6 +184,7 @@ External requests are made only for user-initiated actions:
 | `translate.googleapis.com` | Translate comments via Google Translate      | Clicking "Translate" on a comment                        |
 | `formspree.io`             | Submit bug reports / feature requests        | Submitting the feedback form in the support modal        |
 | `buymeacoffee.com`         | Donation link                                | Clicking the Buy Me a Coffee button in the support modal |
+| `docs.google.com/forms`    | Receive anonymous usage statistics (Chrome)  | Background, only if "Anonymous usage stats" is enabled   |
 
 ---
 

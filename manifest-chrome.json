@@ -73,7 +73,8 @@
     "https://ororo.tv/*",
     "https://www.imdb.com/*",
     "https://v2.sg.media-imdb.com/*",
-    "https://www.rottentomatoes.com/*"
+    "https://www.rottentomatoes.com/*",
+    "https://docs.google.com/forms/*"
   ],
   "icons": {
     "16": "icons/icon16.png",

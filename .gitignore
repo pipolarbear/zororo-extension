@@ -5,3 +5,8 @@ tmp/
 dev-docs/
 .opencode/
 openspec/
+tools/usage-report.py
+tools/.usage.db
+tools/.usage.db-wal
+tools/.usage.db-shm
+__pycache__/

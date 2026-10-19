@@ -1,5 +1,9 @@
 const LANG_NAMES = { en: "English", fr: "French", de: "German", es: "Spanish", pt: "Portuguese", ru: "Russian", it: "Italian", ja: "Japanese", ko: "Korean", zh: "Chinese" };
 
+const SIZE_STEPS = [25, 35, 45, 55, 65, 75, 85, 95, 100];
+const PANEL_MAX = 144;
+const ICON_MAX = 128;
+
 const DEFAULTS = {
   rootDir: "OroroTV",
   subtitleLangs: ["en"],
@@ -12,7 +16,48 @@ const DEFAULTS = {
   maximizeGesture: "dblclick",
   seasonRating: true,
   theme: "light",
+  collapsedSizeOroro: 100,
+  collapsedSizeImdb: 100,
+  /* @telemetry-start */
+  telemetryEnabled: true,
+  /* @telemetry-end */
 };
+
+/* @telemetry-start */
+let lastConfig = null;
+/* @telemetry-end */
+
+const sizeState = { ororo: 100, imdb: 100 };
+let activeSite = "ororo";
+
+function nearestStep(pct) {
+  let best = 0;
+  for (let i = 1; i < SIZE_STEPS.length; i++) {
+    if (Math.abs(SIZE_STEPS[i] - pct) < Math.abs(SIZE_STEPS[best] - pct)) best = i;
+  }
+  return best;
+}
+
+function renderSize() {
+  const slider = document.getElementById("size-slider");
+  const box = document.getElementById("collapse-preview");
+  const img = box.querySelector("img");
+  const pct = sizeState[activeSite];
+  slider.value = String(nearestStep(pct));
+  const scale = pct / 100;
+  box.style.width = PANEL_MAX * scale + "px";
+  box.style.height = PANEL_MAX * scale + "px";
+  img.style.width = ICON_MAX * scale + "px";
+  img.style.height = ICON_MAX * scale + "px";
+}
+
+function selectSite(site) {
+  activeSite = site;
+  document.querySelectorAll("#size-tabs button").forEach((b) => {
+    b.classList.toggle("active", b.dataset.site === site);
+  });
+  renderSize();
+}
 
 async function load() {
   const data = await chrome.storage.sync.get(Object.keys(DEFAULTS));
@@ -24,7 +69,6 @@ async function load() {
   const checked = config.subtitleLangs || [];
   document.querySelectorAll("#subLangs input[type='checkbox']").forEach((cb) => {
     cb.checked = checked.includes(cb.value);
-    cb.onchange = updateDefaultLangSelect;
   });
   updateDefaultLangSelect(config.defaultSubLang);
 
@@ -35,8 +79,54 @@ async function load() {
   document.getElementById("minimizeGesture").value = config.minimizeGesture;
   document.getElementById("maximizeGesture").value = config.maximizeGesture;
   document.getElementById("seasonRating").checked = config.seasonRating;
+
+  sizeState.ororo = SIZE_STEPS[nearestStep(config.collapsedSizeOroro)];
+  sizeState.imdb = SIZE_STEPS[nearestStep(config.collapsedSizeImdb)];
+  selectSite("ororo");
+
+  /* @telemetry-start */
+  const telToggle = document.getElementById("telemetryEnabled");
+  if (telToggle) telToggle.checked = config.telemetryEnabled !== false;
+  lastConfig = { ...config };
+  /* @telemetry-end */
+
   updateGestureDisabled();
-  document.getElementById("closePanelOnClickOutside").onchange = updateGestureDisabled;
+  bindAutoSave();
+}
+
+function bindAutoSave() {
+  document.querySelectorAll("#subLangs input[type='checkbox']").forEach((cb) => {
+    cb.addEventListener("change", () => { updateDefaultLangSelect(); persist(); });
+  });
+  document.getElementById("closePanelOnClickOutside").addEventListener("change", () => {
+    updateGestureDisabled();
+    persist();
+  });
+
+  document.querySelectorAll("#size-tabs button").forEach((b) => {
+    b.addEventListener("click", () => selectSite(b.dataset.site));
+  });
+  const slider = document.getElementById("size-slider");
+  slider.addEventListener("input", () => {
+    sizeState[activeSite] = SIZE_STEPS[Number(slider.value)];
+    renderSize();
+  });
+  slider.addEventListener("change", persist);
+
+  ["rootDir", "theme", "defaultSubLang", "translateComments", "translateDescription",
+    "translateEpisodes", "seasonRating", "minimizeGesture", "maximizeGesture"].forEach((id) => {
+    document.getElementById(id).addEventListener("change", persist);
+  });
+
+  /* @telemetry-start */
+  const telEl = document.getElementById("telemetryEnabled");
+  if (telEl) {
+    telEl.addEventListener("change", () => {
+      if (!telEl.checked) chrome.runtime.sendMessage({ type: "telemetry", event: "opt_out", fields: {} });
+      persist();
+    });
+  }
+  /* @telemetry-end */
 }
 
 function updateGestureDisabled() {
@@ -64,7 +154,22 @@ function updateDefaultLangSelect(selected) {
   }
 }
 
-async function save() {
+/* @telemetry-start */
+function emitSettingChanges(config) {
+  if (!lastConfig) { lastConfig = { ...config }; return; }
+  for (const [k, v] of Object.entries(config)) {
+    if (k === "telemetryEnabled") continue;
+    const cur = Array.isArray(v) ? v.join(",") : String(v);
+    const prev = Array.isArray(lastConfig[k]) ? lastConfig[k].join(",") : String(lastConfig[k]);
+    if (cur !== prev) {
+      chrome.runtime.sendMessage({ type: "telemetry", event: "setting", fields: { setting: k, value: k === "rootDir" ? "" : cur } });
+    }
+  }
+  lastConfig = { ...config };
+}
+/* @telemetry-end */
+
+async function persist() {
   const rootDir = document.getElementById("rootDir").value.trim() || DEFAULTS.rootDir;
   const subtitleLangs = Array.from(
     document.querySelectorAll("#subLangs input[type='checkbox']:checked")
@@ -80,11 +185,23 @@ async function save() {
   const seasonRating = document.getElementById("seasonRating").checked;
   const theme = document.getElementById("theme").value === "dark" ? "dark" : "light";
 
-  await chrome.storage.sync.set({ rootDir, subtitleLangs, defaultSubLang, translateComments, translateDescription, translateEpisodes, closePanelOnClickOutside, minimizeGesture, maximizeGesture, seasonRating, theme });
+  const config = {
+    rootDir, subtitleLangs, defaultSubLang, translateComments, translateDescription,
+    translateEpisodes, closePanelOnClickOutside, minimizeGesture, maximizeGesture,
+    seasonRating, theme,
+    collapsedSizeOroro: sizeState.ororo, collapsedSizeImdb: sizeState.imdb,
+  };
+  /* @telemetry-start */
+  const telCfg = document.getElementById("telemetryEnabled");
+  if (telCfg) config.telemetryEnabled = telCfg.checked;
+  emitSettingChanges(config);
+  /* @telemetry-end */
+  await chrome.storage.sync.set(config);
 
   const status = document.getElementById("status");
   status.textContent = "Saved.";
-  setTimeout(() => (status.textContent = ""), 2000);
+  clearTimeout(persist._t);
+  persist._t = setTimeout(() => (status.textContent = ""), 1500);
 }
 
 async function exportWatched() {
@@ -117,7 +234,6 @@ async function importWatched(file) {
 }
 
 document.addEventListener("DOMContentLoaded", load);
-document.getElementById("save").addEventListener("click", save);
 document.getElementById("export-btn").addEventListener("click", exportWatched);
 document.getElementById("import-btn").addEventListener("click", () =>
   document.getElementById("import-file").click()

@@ -7,6 +7,15 @@ let processing = false;
 let nextId = 1;
 const extCache = new Map();
 
+/* @telemetry-start */
+if (typeof importScripts === "function") {
+  try { importScripts("telemetry.js"); } catch { }
+}
+function telemetry(event, fields) {
+  try { if (self.ZororoTelemetry) self.ZororoTelemetry.emit(event, fields); } catch { }
+}
+/* @telemetry-end */
+
 async function loadQueue() {
   const data = await chrome.storage.local.get(STORAGE_KEY);
   queue = data[STORAGE_KEY] || [];
@@ -175,10 +184,16 @@ async function requestContent(title, imdbId) {
     const payload = encodeURIComponent(JSON.stringify({ title: title || "", imdbId: raw }));
     chrome.tabs.create({ url: "https://ororo.tv/en#zororo-request=" + payload });
     await recordRequest(title, imdbId);
+    /* @telemetry-start */
+    telemetry("request", { title: title || "", imdb_id: raw });
+    /* @telemetry-end */
     return { ok: true, viaTab: true };
   }
   if (!resp.ok) return { ok: false, error: "http-" + resp.status };
   await recordRequest(title, imdbId);
+  /* @telemetry-start */
+  telemetry("request", { title: title || "", imdb_id: raw });
+  /* @telemetry-end */
   return { ok: true };
 }
 
@@ -254,6 +269,11 @@ loadQueue();
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   switch (msg.type) {
+    /* @telemetry-start */
+    case "telemetry":
+      telemetry(msg.event, msg.fields || {});
+      return false;
+    /* @telemetry-end */
     case "start-download":
       (async () => {
         const config = await getConfig();
@@ -307,6 +327,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           broadcast();
           processNext();
         }
+        /* @telemetry-start */
+        if (queuedCount > 0) telemetry("download", { title: msg.showName || "", media_type: "show", count: queuedCount });
+        /* @telemetry-end */
         sendResponse({ ok: true, queued: queuedCount, skipped: skippedCount });
       })();
       return true;
@@ -415,6 +438,17 @@ chrome.alarms.create("queue-watch", { periodInMinutes: 2 });
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === "queue-watch") processNext();
 });
+
+/* @telemetry-start */
+chrome.runtime.onInstalled.addListener((details) => {
+  if (details.reason === "install") telemetry("install", {});
+  else if (details.reason === "update") telemetry("update", { prev_version: details.previousVersion || "" });
+});
+chrome.alarms.create("telemetry-ping", { periodInMinutes: 1440 });
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === "telemetry-ping") telemetry("active", {});
+});
+/* @telemetry-end */
 
 function slugify(str) {
   return str

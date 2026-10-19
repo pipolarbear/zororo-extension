@@ -829,9 +829,9 @@
 /* ====== COLLAPSE / MINIMIZE ====== */
 
 #ororo-dl-panel.collapsed {
-  width: 144px;
-  height: 144px;
-  min-height: 144px;
+  width: calc(144px * var(--zoro-collapsed-scale, 1));
+  height: calc(144px * var(--zoro-collapsed-scale, 1));
+  min-height: calc(144px * var(--zoro-collapsed-scale, 1));
   top: 80px;
   left: auto;
   right: 16px;
@@ -851,8 +851,8 @@
 
 .ororo-collapse-icon {
   display: none;
-  width: 128px;
-  height: 128px;
+  width: calc(128px * var(--zoro-collapsed-scale, 1));
+  height: calc(128px * var(--zoro-collapsed-scale, 1));
 }
 #ororo-dl-panel.collapsed .ororo-collapse-icon {
   display: block !important;
