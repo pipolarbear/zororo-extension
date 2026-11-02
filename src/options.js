@@ -25,6 +25,9 @@ const DEFAULTS = {
 
 /* @telemetry-start */
 let lastConfig = null;
+function tel(event, fields) {
+  try { chrome.runtime.sendMessage({ type: "telemetry", event, fields: fields || {} }); } catch { }
+}
 /* @telemetry-end */
 
 const sizeState = { ororo: 100, imdb: 100 };
@@ -214,6 +217,9 @@ async function exportWatched() {
   a.download = "zororo-watched-" + new Date().toISOString().slice(0, 10) + ".json";
   a.click();
   URL.revokeObjectURL(url);
+  /* @telemetry-start */
+  tel("library", { action: "export", count: (data.watched || []).length, surface: "options" });
+  /* @telemetry-end */
 }
 
 async function importWatched(file) {
@@ -225,6 +231,9 @@ async function importWatched(file) {
       if (!item.id) throw new Error("Item missing 'id' field");
     }
     await chrome.storage.local.set({ watched: data });
+    /* @telemetry-start */
+    tel("library", { action: "import", count: data.length, surface: "options" });
+    /* @telemetry-end */
     const status = document.getElementById("io-status");
     status.textContent = "Imported " + data.length + " watched items.";
     setTimeout(() => (status.textContent = ""), 3000);

@@ -8,6 +8,10 @@
 // Fill in FORM_URL + ENTRIES from your Google Form. Until FORM_URL is set,
 // emit() is a no-op and nothing is transmitted.
 (() => {
+  // Build flag: "1" in store builds, "0" in local dev builds (see .justfile).
+  // Unreplaced (raw src load) defaults to disabled.
+  const TELEMETRY_ENABLED = "@TELEMETRY_ENABLED@" === "1";
+
   const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSd3FqIZvDQzJgNpW-bAu-bSXptR5lRYyM-fhrBT84r45xXs3g/formResponse";
   const ENTRIES = {
     ts: "entry.1926782407",
@@ -21,6 +25,10 @@
     setting: "entry.759017310",
     value: "entry.44871666",
     prev_version: "entry.709085116",
+    action: "entry.1951417412",
+    surface: "entry.676088147",
+    season: "entry.764797288",
+    reason: "entry.1438446788",
   };
 
   const MAX_PER_MINUTE = 20;
@@ -68,6 +76,7 @@
 
   async function emit(event, fields = {}) {
     try {
+      if (!TELEMETRY_ENABLED) return;
       if (!FORM_URL || FORM_URL.includes("REPLACE_FORM_ID")) return;
       if (event !== "opt_out" && !(await isEnabled())) return;
       if (!rateOk()) return;

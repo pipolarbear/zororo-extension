@@ -14,6 +14,16 @@ if (typeof importScripts === "function") {
 function telemetry(event, fields) {
   try { if (self.ZororoTelemetry) self.ZororoTelemetry.emit(event, fields); } catch { }
 }
+function downloadErrorReason(msg) {
+  const s = String(msg || "").toLowerCase();
+  if (s.includes("auth") || s.includes("401") || s.includes("403")) return "auth";
+  if (s.includes("402") || s.includes("limit")) return "free_limit";
+  if (s.includes("cancel")) return "cancelled";
+  if (s.includes("url")) return "invalid_url";
+  if (s.includes("network") || s.includes("timeout") || s.includes("fetch")) return "network";
+  if (s.includes("disk") || s.includes("quota") || s.includes("space")) return "disk";
+  return "unknown";
+}
 /* @telemetry-end */
 
 async function loadQueue() {
@@ -185,14 +195,14 @@ async function requestContent(title, imdbId) {
     chrome.tabs.create({ url: "https://ororo.tv/en#zororo-request=" + payload });
     await recordRequest(title, imdbId);
     /* @telemetry-start */
-    telemetry("request", { title: title || "", imdb_id: raw });
+    telemetry("request", { action: "fallback", title: title || "", imdb_id: raw });
     /* @telemetry-end */
     return { ok: true, viaTab: true };
   }
   if (!resp.ok) return { ok: false, error: "http-" + resp.status };
   await recordRequest(title, imdbId);
   /* @telemetry-start */
-  telemetry("request", { title: title || "", imdb_id: raw });
+  telemetry("request", { action: "direct", title: title || "", imdb_id: raw });
   /* @telemetry-end */
   return { ok: true };
 }
@@ -262,6 +272,9 @@ async function processItem(item) {
   } catch (err) {
     item.status = "failed";
     item.error = err.message;
+    /* @telemetry-start */
+    telemetry("download", { action: "failed", title: item.showName || "", media_type: "show", reason: downloadErrorReason(err.message) });
+    /* @telemetry-end */
   }
 }
 
@@ -328,7 +341,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           processNext();
         }
         /* @telemetry-start */
-        if (queuedCount > 0) telemetry("download", { title: msg.showName || "", media_type: "show", count: queuedCount });
+        if (queuedCount > 0) telemetry("download", { action: "enqueue", title: msg.showName || "", media_type: "show", count: queuedCount });
         /* @telemetry-end */
         sendResponse({ ok: true, queued: queuedCount, skipped: skippedCount });
       })();
@@ -342,13 +355,22 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       }
       return true;
 
-    case "cancel-all":
-      queue = queue.map((e) =>
-        e.status === "queued" ? { ...e, status: "cancelled" } : e
-      );
+    case "cancel-all": {
+      let cancelled = 0;
+      queue = queue.map((e) => {
+        if (e.status === "queued") {
+          cancelled++;
+          return { ...e, status: "cancelled" };
+        }
+        return e;
+      });
       saveQueue().then(broadcast);
+      /* @telemetry-start */
+      if (cancelled > 0) telemetry("download", { action: "cancelled", count: cancelled });
+      /* @telemetry-end */
       sendResponse({ ok: true });
       break;
+    }
 
     case "clean-all":
       queue = [];

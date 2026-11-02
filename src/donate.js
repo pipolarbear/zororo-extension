@@ -15,6 +15,14 @@
 
   let panel = null;
   let userT = null;
+  /* @telemetry-start */
+  function tel(action) {
+    try {
+      const surface = String(location.host || "").includes("imdb.") ? "imdb" : "ororo";
+      chrome.runtime.sendMessage({ type: "telemetry", event: "feature", fields: { action: action, surface: surface } });
+    } catch { }
+  }
+  /* @telemetry-end */
 
   function t(key) {
     const v = userT ? userT(key) : null;
@@ -113,7 +121,12 @@
       fl.className = "coin-label";
       fl.textContent = coin.name;
       card.appendChild(fl);
-      card.onclick = () => showCryptoOverlay(coin);
+      card.onclick = () => {
+        /* @telemetry-start */
+        tel("crypto");
+        /* @telemetry-end */
+        showCryptoOverlay(coin);
+      };
       grid.appendChild(card);
     }
 
@@ -124,7 +137,12 @@
     feedbackBtn.className = "donate-back";
     feedbackBtn.textContent = "\ud83d\udcac " + t("feedback");
     feedbackBtn.style.cssText = "margin-top:16px;width:100%;padding:8px;background:#2d2d4e;color:#ccc;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;";
-    feedbackBtn.onclick = () => showFeedbackForm(modal);
+    feedbackBtn.onclick = () => {
+      /* @telemetry-start */
+      tel("feedback");
+      /* @telemetry-end */
+      showFeedbackForm(modal);
+    };
     modal.appendChild(feedbackBtn);
   }
 
@@ -181,6 +199,9 @@
           }),
         });
         if (resp.ok) {
+          /* @telemetry-start */
+          tel("feedback_submit");
+          /* @telemetry-end */
           titleInput.value = "";
           descTextarea.value = "";
           statusMsg.textContent = "\u2705 " + t("feedbackSuccess");
