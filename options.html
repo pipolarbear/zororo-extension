@@ -163,6 +163,14 @@
     </div>
     <div class="hint">Sends anonymous event counts (settings changes, downloads, content requests) using a rotating weekly id. No account, no personal data. Uncheck to stop.</div>
   </div>
+  <div class="field">
+    <label>Debug</label>
+    <div class="checkbox-group">
+      <label><input type="checkbox" id="debugTelemetry" /> Capture local telemetry diagnostics</label>
+    </div>
+    <div class="hint">Records each telemetry step locally on this device; nothing is sent. Use Export diagnostics if an install doesn't appear in the report.</div>
+    <button id="export-diag-btn" type="button" style="margin-top:8px;">Export diagnostics</button>
+  </div>
   <!-- @telemetry-end -->
 
   <div id="status"></div>

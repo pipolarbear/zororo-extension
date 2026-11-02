@@ -8,7 +8,12 @@
   const t = (key, params) => window.ZororoI18n.t(lang, key, params);
   /* @telemetry-start */
   function tel(event, fields) {
-    try { chrome.runtime.sendMessage({ type: "telemetry", event, fields: fields || {} }); } catch { }
+    try {
+      chrome.runtime.sendMessage({ type: "telemetry", event, fields: fields || {} });
+    } catch (e) {
+      try { console.warn("[zororo] telemetry message failed:", e); } catch { }
+      try { chrome.storage.local.set({ telemetryLastSendError: { at: new Date().toISOString(), ctx: "imdb", event, err: String(e && (e.message || e)) } }); } catch { }
+    }
   }
   /* @telemetry-end */
 

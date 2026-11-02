@@ -41,6 +41,5 @@ dev-chrome:
     cp manifest-chrome.json extension/manifest.json
     sed -i "s/@VERSION@/`cat VERSION`/g" extension/manifest.json
     sed -i "s|@RATE_URL@|https://chromewebstore.google.com/detail/ororo/ibcmhfcmkmllpimlpplbmopfjollmecf|g" extension/src/content.js extension/src/imdb.js
-    sed -i "s/@TELEMETRY_ENABLED@/0/g" extension/src/telemetry.js
 
 build: build-chrome build-firefox

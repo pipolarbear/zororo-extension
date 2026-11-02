@@ -20,7 +20,10 @@
     try {
       const surface = String(location.host || "").includes("imdb.") ? "imdb" : "ororo";
       chrome.runtime.sendMessage({ type: "telemetry", event: "feature", fields: { action: action, surface: surface } });
-    } catch { }
+    } catch (e) {
+      try { console.warn("[zororo] telemetry message failed:", e); } catch { }
+      try { chrome.storage.local.set({ telemetryLastSendError: { at: new Date().toISOString(), ctx: "donate", event: "feature", err: String(e && (e.message || e)) } }); } catch { }
+    }
   }
   /* @telemetry-end */
 

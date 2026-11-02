@@ -13,7 +13,7 @@ full **dark mode** for ororo.tv, and adds an **IMDb availability panel** with
 content requests.
 
 [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.11.3-blue)](https://github.com/perplexedpigmy/zororo-extension)
+[![Version](https://img.shields.io/badge/version-1.11.4-blue)](https://github.com/perplexedpigmy/zororo-extension)
 [![Firefox](https://img.shields.io/badge/firefox-addon-orange)](https://addons.mozilla.org/en-US/firefox/addon/zororo/)
 [![Chrome](https://img.shields.io/badge/chrome-web__store-4285F4)](https://chromewebstore.google.com/detail/zororo/ibcmhfcmkmllpimlpplbmopfjollmecf)
 

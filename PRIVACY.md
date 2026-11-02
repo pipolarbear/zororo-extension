@@ -70,6 +70,16 @@ What is sent, and when:
 The endpoint is a Google Form (`docs.google.com/forms`). Turning the option off
 stops all further sending (a single final event records the opt-out).
 
+### Local diagnostics (opt-in)
+
+If you enable **Debug → Capture local telemetry diagnostics**, the extension
+keeps a local log of telemetry delivery phases (including error messages and a
+short HTTP response snippet) in `chrome.storage.local`. This log never leaves
+your device, is not part of the usage statistics, and is deleted when you
+uninstall the extension or clear its data. **Export diagnostics** saves it to a
+file; on a delivery failure the extension may also write it to your Downloads
+folder.
+
 ### Network requests
 
 The extension makes requests to:

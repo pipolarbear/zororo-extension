@@ -9,11 +9,25 @@ const extCache = new Map();
 
 /* @telemetry-start */
 if (typeof importScripts === "function") {
-  try { importScripts("telemetry.js"); } catch { }
+  try { importScripts("telemetry.js"); } catch (e) { try { console.warn("[zororo] importScripts(telemetry.js) failed:", e); } catch { } }
 }
 function telemetry(event, fields) {
-  try { if (self.ZororoTelemetry) self.ZororoTelemetry.emit(event, fields); } catch { }
+  try {
+    if (self.ZororoTelemetry) self.ZororoTelemetry.emit(event, fields);
+  } catch (e) {
+    try { console.warn("[zororo] telemetry emit failed:", e); } catch { }
+    try { chrome.storage.local.set({ telemetryLastSendError: { at: new Date().toISOString(), ctx: "background", event, err: String(e && (e.message || e)) } }); } catch { }
+  }
 }
+(async () => {
+  try {
+    await self.ZororoTelemetry?.checkPending?.("unconfirmed_posting");
+    await self.ZororoTelemetry?.boot?.({
+      version: chrome.runtime.getManifest().version,
+      online: typeof navigator !== "undefined" ? navigator.onLine : null,
+    });
+  } catch { }
+})();
 function downloadErrorReason(msg) {
   const s = String(msg || "").toLowerCase();
   if (s.includes("auth") || s.includes("401") || s.includes("403")) return "auth";
@@ -286,6 +300,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     case "telemetry":
       telemetry(msg.event, msg.fields || {});
       return false;
+    case "telemetry-debug":
+      try { if (self.ZororoTelemetry && self.ZororoTelemetry.setDebug) self.ZororoTelemetry.setDebug(msg.enabled === true); } catch { }
+      return false;
     /* @telemetry-end */
     case "start-download":
       (async () => {
@@ -462,7 +479,13 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 });
 
 /* @telemetry-start */
-chrome.runtime.onInstalled.addListener((details) => {
+chrome.runtime.onInstalled.addListener(async (details) => {
+  try {
+    await self.ZororoTelemetry?.diag?.("onInstalled", {
+      reason: details.reason,
+      previousVersion: details.previousVersion || "",
+    });
+  } catch { }
   if (details.reason === "install") telemetry("install", {});
   else if (details.reason === "update") telemetry("update", { prev_version: details.previousVersion || "" });
 });
