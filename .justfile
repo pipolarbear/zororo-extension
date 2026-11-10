@@ -6,29 +6,32 @@ build-firefox:
     rm -rf extension
     mkdir -p extension
     cp -r src icons popup.html options.html extension/
+    rm -rf extension/src/graphify-out
     cp manifest-firefox.json extension/manifest.json
     sed -i "s/@VERSION@/`cat VERSION`/g" extension/manifest.json
     sed -i "s|@RATE_URL@|https://addons.mozilla.org/en-US/firefox/addon/zororo/reviews/|g" extension/src/content.js extension/src/imdb.js
     sed -i -E "s/version-(@VERSION@|[0-9][0-9.]*)-blue/version-`cat VERSION`-blue/g" README.md
     python3 tools/strip-telemetry.py extension
-    cd extension && zip -r ../dist/zororo-firefox.zip src icons popup.html options.html manifest.json
+    cd extension && rm -f ../dist/zororo-firefox.zip && zip -r ../dist/zororo-firefox.zip src icons popup.html options.html manifest.json
 
 build-chrome:
     mkdir -p dist
     rm -rf extension
     mkdir -p extension
     cp -r src icons popup.html options.html extension/
+    rm -rf extension/src/graphify-out
     cp manifest-chrome.json extension/manifest.json
     sed -i "s/@VERSION@/`cat VERSION`/g" extension/manifest.json
     sed -i "s|@RATE_URL@|https://chromewebstore.google.com/detail/ororo/ibcmhfcmkmllpimlpplbmopfjollmecf|g" extension/src/content.js extension/src/imdb.js
     sed -i "s/@TELEMETRY_ENABLED@/1/g" extension/src/telemetry.js
     sed -i -E "s/version-(@VERSION@|[0-9][0-9.]*)-blue/version-`cat VERSION`-blue/g" README.md
-    cd extension && zip -r ../dist/zororo-chrome.zip src icons popup.html options.html manifest.json
+    cd extension && rm -f ../dist/zororo-chrome.zip && zip -r ../dist/zororo-chrome.zip src icons popup.html options.html manifest.json
 
 dev-firefox:
     rm -rf extension
     mkdir -p extension
     cp -r src icons popup.html options.html extension/
+    rm -rf extension/src/graphify-out
     cp manifest-firefox.json extension/manifest.json
     sed -i "s/@VERSION@/`cat VERSION`/g" extension/manifest.json
     sed -i "s|@RATE_URL@|https://addons.mozilla.org/en-US/firefox/addon/zororo/reviews/|g" extension/src/content.js extension/src/imdb.js
@@ -38,6 +41,7 @@ dev-chrome:
     rm -rf extension
     mkdir -p extension
     cp -r src icons popup.html options.html extension/
+    rm -rf extension/src/graphify-out
     cp manifest-chrome.json extension/manifest.json
     sed -i "s/@VERSION@/`cat VERSION`/g" extension/manifest.json
     sed -i "s|@RATE_URL@|https://chromewebstore.google.com/detail/ororo/ibcmhfcmkmllpimlpplbmopfjollmecf|g" extension/src/content.js extension/src/imdb.js
