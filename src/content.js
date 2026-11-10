@@ -669,14 +669,14 @@ const PANEL_STATE_KEY = "zororoPanelState";
       e.stopPropagation();
       panel.classList.toggle("collapsed");
       /* @telemetry-start */
-      tel("panel", { action: panel.classList.contains("collapsed") ? "collapse" : "expand", surface: "ororo" });
+      tel("panel", { action: panel.classList.contains("collapsed") ? "collapse" : "expand", surface: "ororo", reason: "close" });
       /* @telemetry-end */
       chrome.storage.local.set({ [PANEL_STATE_KEY]: panel.classList.contains("collapsed") ? "collapsed" : "expanded" });
     };
     panel.onclick = (e) => {
       if (panel.classList.contains("collapsed")) {
         /* @telemetry-start */
-        tel("panel", { action: "expand", surface: "ororo" });
+        tel("panel", { action: "expand", surface: "ororo", reason: "panel" });
         /* @telemetry-end */
         panel.classList.remove("collapsed");
         chrome.storage.local.set({ [PANEL_STATE_KEY]: "expanded" });
@@ -721,7 +721,7 @@ const PANEL_STATE_KEY = "zororoPanelState";
         if (panel.classList.contains("collapsed")) {
           if (maximizeGesture === gesture) {
             /* @telemetry-start */
-            tel("panel", { action: "expand", surface: "ororo" });
+            tel("panel", { action: "expand", surface: "ororo", reason: "gesture" });
             /* @telemetry-end */
             panel.classList.remove("collapsed");
             chrome.storage.local.set({ [PANEL_STATE_KEY]: "expanded" });
@@ -729,7 +729,7 @@ const PANEL_STATE_KEY = "zororoPanelState";
         } else {
           if (minimizeGesture === gesture) {
             /* @telemetry-start */
-            tel("panel", { action: "collapse", surface: "ororo" });
+            tel("panel", { action: "collapse", surface: "ororo", reason: "gesture" });
             /* @telemetry-end */
             panel.classList.add("collapsed");
             chrome.storage.local.set({ [PANEL_STATE_KEY]: "collapsed" });

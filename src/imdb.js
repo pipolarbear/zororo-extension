@@ -284,14 +284,14 @@
     e.stopPropagation();
     panel.classList.toggle("collapsed");
     /* @telemetry-start */
-    tel("panel", { action: panel.classList.contains("collapsed") ? "collapse" : "expand", surface: "imdb" });
+    tel("panel", { action: panel.classList.contains("collapsed") ? "collapse" : "expand", surface: "imdb", reason: "close" });
     /* @telemetry-end */
     setState(panel.classList.contains("collapsed") ? "collapsed" : "expanded");
   };
   panel.onclick = () => {
     if (panel.classList.contains("collapsed")) {
       /* @telemetry-start */
-      tel("panel", { action: "expand", surface: "imdb" });
+      tel("panel", { action: "expand", surface: "imdb", reason: "panel" });
       /* @telemetry-end */
       panel.classList.remove("collapsed");
       setState("expanded");
@@ -322,14 +322,14 @@
         if (panel.classList.contains("collapsed")) {
           if (cfg.maximizeGesture === gesture) {
             /* @telemetry-start */
-            tel("panel", { action: "expand", surface: "imdb" });
+            tel("panel", { action: "expand", surface: "imdb", reason: "gesture" });
             /* @telemetry-end */
             panel.classList.remove("collapsed");
             setState("expanded");
           }
         } else if (cfg.minimizeGesture === gesture) {
           /* @telemetry-start */
-          tel("panel", { action: "collapse", surface: "imdb" });
+          tel("panel", { action: "collapse", surface: "imdb", reason: "gesture" });
           /* @telemetry-end */
           panel.classList.add("collapsed");
           setState("collapsed");
