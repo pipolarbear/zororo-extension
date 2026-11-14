@@ -235,7 +235,13 @@
       state.textContent = t("imdbNotLoggedIn");
       const loginLink = actionLink("imdb-login", t("imdbLogin"), "https://ororo.tv/en");
       /* @telemetry-start */
-      loginLink.addEventListener("click", () => tel("feature", { action: "login", surface: "imdb" }));
+      loginLink.addEventListener("click", () => tel("feature", {
+        action: "login",
+        surface: "imdb",
+        title: title || "",
+        media_type: type || "",
+        imdb_id: imdbId,
+      }));
       /* @telemetry-end */
       body.appendChild(loginLink);
       return;
@@ -246,7 +252,13 @@
       const href = "https://ororo.tv/en/" + (resp.type === "movie" ? "movies/" : "shows/") + resp.slug;
       const openLink = actionLink("imdb-open", t("imdbOpen"), href);
       /* @telemetry-start */
-      openLink.addEventListener("click", () => tel("feature", { action: "open_ororo", surface: "imdb" }));
+      openLink.addEventListener("click", () => tel("feature", {
+        action: "open_ororo",
+        surface: "imdb",
+        title: title || "",
+        media_type: resp.type || type || "",
+        imdb_id: imdbId,
+      }));
       /* @telemetry-end */
       body.appendChild(openLink);
       return;
@@ -263,7 +275,7 @@
     btn.onclick = () => {
       btn.disabled = true;
       btn.textContent = t("imdbRequesting");
-      chrome.runtime.sendMessage({ type: "request-content", title, imdbId }, (r) => {
+      chrome.runtime.sendMessage({ type: "request-content", title, imdbId, mediaType: type || "" }, (r) => {
         if (r && r.ok) {
           renderRequested(Date.now());
         } else {

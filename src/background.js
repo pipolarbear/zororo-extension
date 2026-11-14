@@ -184,7 +184,7 @@ async function checkOroro(imdbId) {
   return { loggedIn: true, found: false, requested: !!rec, requestedAt: rec ? rec.requestedAt : null };
 }
 
-async function requestContent(title, imdbId) {
+async function requestContent(title, imdbId, mediaType) {
   const raw = /^tt\d+$/i.test(String(imdbId)) ? String(imdbId) : "tt" + (normalizeImdbId(imdbId) || "");
   const modalResp = await fetch("https://ororo.tv/en/modals/contentRequest", { credentials: "include" });
   if (modalResp.status === 401) return { ok: false, loggedIn: false };
@@ -209,14 +209,14 @@ async function requestContent(title, imdbId) {
     chrome.tabs.create({ url: "https://ororo.tv/en#zororo-request=" + payload });
     await recordRequest(title, imdbId);
     /* @telemetry-start */
-    telemetry("request", { action: "fallback", title: title || "", imdb_id: raw });
+    telemetry("request", { action: "fallback", title: title || "", imdb_id: raw, media_type: mediaType || "" });
     /* @telemetry-end */
     return { ok: true, viaTab: true };
   }
   if (!resp.ok) return { ok: false, error: "http-" + resp.status };
   await recordRequest(title, imdbId);
   /* @telemetry-start */
-  telemetry("request", { action: "direct", title: title || "", imdb_id: raw });
+  telemetry("request", { action: "direct", title: title || "", imdb_id: raw, media_type: mediaType || "" });
   /* @telemetry-end */
   return { ok: true };
 }
@@ -287,7 +287,7 @@ async function processItem(item) {
     item.status = "failed";
     item.error = err.message;
     /* @telemetry-start */
-    telemetry("download", { action: "failed", title: item.showName || "", media_type: "show", reason: downloadErrorReason(err.message) });
+    telemetry("download", { action: "failed", title: item.showName || "", media_type: "show", season: item.season, reason: downloadErrorReason(err.message) });
     /* @telemetry-end */
   }
 }
@@ -327,6 +327,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
         let queuedCount = 0;
         let skippedCount = 0;
+        const queuedSeasons = new Set();
         for (const ep of msg.episodes) {
           if (onDisk.has(Number(ep.number))) {
             skippedCount++;
@@ -350,6 +351,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
               status: "queued",
             });
             queuedCount++;
+            queuedSeasons.add(ep.season);
           }
         }
         if (queuedCount > 0) {
@@ -358,7 +360,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           processNext();
         }
         /* @telemetry-start */
-        if (queuedCount > 0) telemetry("download", { action: "enqueue", title: msg.showName || "", media_type: "show", count: queuedCount });
+        if (queuedCount > 0) {
+          // season is a single number, or a comma-separated list when the batch spans seasons.
+          const seasonList = Array.from(queuedSeasons).sort((a, b) => Number(a) - Number(b)).join(",");
+          telemetry("download", { action: "enqueue", title: msg.showName || "", media_type: "show", count: queuedCount, season: seasonList });
+        }
         /* @telemetry-end */
         sendResponse({ ok: true, queued: queuedCount, skipped: skippedCount });
       })();
@@ -414,7 +420,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     case "request-content": {
       (async () => {
         try {
-          sendResponse(await requestContent(msg.title, msg.imdbId));
+          sendResponse(await requestContent(msg.title, msg.imdbId, msg.mediaType));
         } catch (e) {
           sendResponse({ ok: false, error: e.message });
         }

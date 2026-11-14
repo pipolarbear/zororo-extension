@@ -48,13 +48,16 @@ turn it off in the options page (**Anonymous usage stats**).
 What is sent, and when:
 
 - **Events:** extension install/update and a daily "active" ping; content requests
-  (title + IMDb id); downloads started/failed/cancelled (title, media type,
-  episode count, and — on failure — an error *category*); **ratings** (title,
-  media type, season number, and the star value); settings changes (the setting
-  name and its new value); feature interactions (translate, IMDb/RT links,
-  support, review, feedback, crypto, the Rated tab and its sort/remove, and
-  import/export); panel collapse/expand; review-prompt actions; and error
-  categories (auth, free-limit, not-found, API); plus a one-time event when you
+  (title, IMDb id, and media type); downloads started/failed/cancelled (title,
+  media type, episode count, season number or list, and — on failure — an error
+  *category*); **ratings** (title, media type, season number, and the star
+  value); settings changes (the setting name and its new value); feature
+  interactions: translate and IMDb/RT links (title, media type; add IMDb id for
+  IMDb links), the IMDb→ororo link and login prompt (title, media type, IMDb
+  id), and support, review, feedback, crypto, the Rated tab and its
+  sort/remove, and import/export (no content details); panel collapse/expand;
+  review-prompt actions; and error categories (auth, free-limit, not-found,
+  API) with the page title and media type; plus a one-time event when you
   disable this.
 - **Identifier:** a **rotating** anonymous id. A random secret is generated and
   stored only on your device; the id sent is an HMAC of that secret with the

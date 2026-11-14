@@ -795,7 +795,12 @@ const PANEL_STATE_KEY = "zororoPanelState";
         SHOW_NOT_FOUND: t("showNotFound"),
       };
       /* @telemetry-start */
-      tel("error", { action: err.message === "AUTH_FAILED" ? "auth_failed" : err.message === "FREE_LIMIT" ? "free_limit" : err.message === "SHOW_NOT_FOUND" ? "show_not_found" : "api_error", surface: "ororo" });
+      tel("error", {
+        action: err.message === "AUTH_FAILED" ? "auth_failed" : err.message === "FREE_LIMIT" ? "free_limit" : err.message === "SHOW_NOT_FOUND" ? "show_not_found" : "api_error",
+        surface: "ororo",
+        title: showName || slug || "",
+        media_type: "show",
+      });
       /* @telemetry-end */
       errorEl.textContent = msgs[err.message] || t("loadFailed") + ": " + err.message;
       errorEl.classList.add("visible");
@@ -835,7 +840,12 @@ const PANEL_STATE_KEY = "zororoPanelState";
         FREE_LIMIT: t("freeLimit"),
       };
       /* @telemetry-start */
-      tel("error", { action: err.message === "AUTH_FAILED" ? "auth_failed" : err.message === "FREE_LIMIT" ? "free_limit" : "api_error", surface: "ororo" });
+      tel("error", {
+        action: err.message === "AUTH_FAILED" ? "auth_failed" : err.message === "FREE_LIMIT" ? "free_limit" : "api_error",
+        surface: "ororo",
+        title: showName || slug || "",
+        media_type: "movie",
+      });
       /* @telemetry-end */
       errorEl.textContent = msgs[err.message] || t("loadFailed") + ": " + err.message;
       errorEl.classList.add("visible");
@@ -1043,7 +1053,16 @@ const PANEL_STATE_KEY = "zororoPanelState";
         a.textContent = "IMDb";
         a.title = t("openImdb");
         /* @telemetry-start */
-        a.addEventListener("click", () => tel("feature", { action: "open_imdb", surface: "ororo" }));
+        a.addEventListener("click", () => {
+          const idMatch = /\/title\/(tt\d+)/.exec(String(imdbUrl));
+          tel("feature", {
+            action: "open_imdb",
+            surface: "ororo",
+            title: title || "",
+            media_type: isMovie ? "movie" : "show",
+            imdb_id: idMatch ? idMatch[1] : "",
+          });
+        });
         /* @telemetry-end */
         extLinksEl.appendChild(a);
         hasLinks = true;
@@ -1058,7 +1077,12 @@ const PANEL_STATE_KEY = "zororoPanelState";
         a.textContent = "RT";
         a.title = t("openRt");
         /* @telemetry-start */
-        a.addEventListener("click", () => tel("feature", { action: "open_rt", surface: "ororo" }));
+        a.addEventListener("click", () => tel("feature", {
+          action: "open_rt",
+          surface: "ororo",
+          title: title || "",
+          media_type: isMovie ? "movie" : "show",
+        }));
         /* @telemetry-end */
         extLinksEl.appendChild(a);
         hasLinks = true;
@@ -1408,7 +1432,12 @@ const PANEL_STATE_KEY = "zororoPanelState";
         return;
       }
       /* @telemetry-start */
-      tel("feature", { action: "translate", surface: "ororo" });
+      tel("feature", {
+        action: "translate",
+        surface: "ororo",
+        title: showName || slug || "",
+        media_type: isMovie ? "movie" : "show",
+      });
       /* @telemetry-end */
       const translated = await translateText(text, targetLang);
       if (translated === null) {
