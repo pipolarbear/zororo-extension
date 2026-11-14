@@ -6,6 +6,16 @@
   const imdbId = m[1];
   const lang = window.ZororoI18n.detectLang();
   const t = (key, params) => window.ZororoI18n.t(lang, key, params);
+  /* @telemetry-start */
+  function tel(event, fields) {
+    try {
+      chrome.runtime.sendMessage({ type: "telemetry", event, fields: fields || {} });
+    } catch (e) {
+      try { console.warn("[zororo] telemetry message failed:", e); } catch { }
+      try { chrome.storage.local.set({ telemetryLastSendError: { at: new Date().toISOString(), ctx: "imdb", event, err: String(e && (e.message || e)) } }); } catch { }
+    }
+  }
+  /* @telemetry-end */
 
   let title = null;
   let year = null;
@@ -81,7 +91,13 @@
   supportBtn.className = "donate-btn";
   supportBtn.type = "button";
   supportBtn.textContent = "\u2764\ufe0f " + t("support");
-  supportBtn.onclick = (e) => { e.stopPropagation(); window.ZororoDonate.open(panel); };
+  supportBtn.onclick = (e) => {
+    e.stopPropagation();
+    /* @telemetry-start */
+    tel("feature", { action: "support", surface: "imdb" });
+    /* @telemetry-end */
+    window.ZororoDonate.open(panel);
+  };
   footer.appendChild(supportBtn);
 
   const reviewBtn = document.createElement("button");
@@ -89,7 +105,13 @@
   reviewBtn.className = "review-btn";
   reviewBtn.type = "button";
   reviewBtn.textContent = "\u2605 " + t("reviewUs");
-  reviewBtn.onclick = (e) => { e.stopPropagation(); window.open(RATE_URL, "_blank"); };
+  reviewBtn.onclick = (e) => {
+    e.stopPropagation();
+    /* @telemetry-start */
+    tel("feature", { action: "review", surface: "imdb" });
+    /* @telemetry-end */
+    window.open(RATE_URL, "_blank");
+  };
   footer.appendChild(reviewBtn);
 
   panel.appendChild(footer);
@@ -211,14 +233,34 @@
     }
     if (!resp.loggedIn) {
       state.textContent = t("imdbNotLoggedIn");
-      body.appendChild(actionLink("imdb-login", t("imdbLogin"), "https://ororo.tv/en"));
+      const loginLink = actionLink("imdb-login", t("imdbLogin"), "https://ororo.tv/en");
+      /* @telemetry-start */
+      loginLink.addEventListener("click", () => tel("feature", {
+        action: "login",
+        surface: "imdb",
+        title: title || "",
+        media_type: type || "",
+        imdb_id: imdbId,
+      }));
+      /* @telemetry-end */
+      body.appendChild(loginLink);
       return;
     }
     if (resp.found) {
       state.textContent = t("imdbAvailable");
       if (resp.rating > 0) body.appendChild(ratingRow(resp.rating));
       const href = "https://ororo.tv/en/" + (resp.type === "movie" ? "movies/" : "shows/") + resp.slug;
-      body.appendChild(actionLink("imdb-open", t("imdbOpen"), href));
+      const openLink = actionLink("imdb-open", t("imdbOpen"), href);
+      /* @telemetry-start */
+      openLink.addEventListener("click", () => tel("feature", {
+        action: "open_ororo",
+        surface: "imdb",
+        title: title || "",
+        media_type: resp.type || type || "",
+        imdb_id: imdbId,
+      }));
+      /* @telemetry-end */
+      body.appendChild(openLink);
       return;
     }
     if (resp.requested) {
@@ -233,7 +275,7 @@
     btn.onclick = () => {
       btn.disabled = true;
       btn.textContent = t("imdbRequesting");
-      chrome.runtime.sendMessage({ type: "request-content", title, imdbId }, (r) => {
+      chrome.runtime.sendMessage({ type: "request-content", title, imdbId, mediaType: type || "" }, (r) => {
         if (r && r.ok) {
           renderRequested(Date.now());
         } else {
@@ -253,10 +295,16 @@
   closeBtn.onclick = (e) => {
     e.stopPropagation();
     panel.classList.toggle("collapsed");
+    /* @telemetry-start */
+    tel("panel", { action: panel.classList.contains("collapsed") ? "collapse" : "expand", surface: "imdb", reason: "close" });
+    /* @telemetry-end */
     setState(panel.classList.contains("collapsed") ? "collapsed" : "expanded");
   };
   panel.onclick = () => {
     if (panel.classList.contains("collapsed")) {
+      /* @telemetry-start */
+      tel("panel", { action: "expand", surface: "imdb", reason: "panel" });
+      /* @telemetry-end */
       panel.classList.remove("collapsed");
       setState("expanded");
     }
@@ -285,10 +333,16 @@
         if (panel.contains(e.target)) return;
         if (panel.classList.contains("collapsed")) {
           if (cfg.maximizeGesture === gesture) {
+            /* @telemetry-start */
+            tel("panel", { action: "expand", surface: "imdb", reason: "gesture" });
+            /* @telemetry-end */
             panel.classList.remove("collapsed");
             setState("expanded");
           }
         } else if (cfg.minimizeGesture === gesture) {
+          /* @telemetry-start */
+          tel("panel", { action: "collapse", surface: "imdb", reason: "gesture" });
+          /* @telemetry-end */
           panel.classList.add("collapsed");
           setState("collapsed");
         }

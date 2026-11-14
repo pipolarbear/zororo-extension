@@ -25,6 +25,24 @@ const DEFAULTS = {
 
 /* @telemetry-start */
 let lastConfig = null;
+async function exportDiagnostics() {
+  const { telemetryDiag = [] } = await chrome.storage.local.get({ telemetryDiag: [] });
+  const blob = new Blob([JSON.stringify(telemetryDiag, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "zororo-telemetry-diag-" + new Date().toISOString().replace(/[:.]/g, "-") + ".json";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+function tel(event, fields) {
+  try {
+    chrome.runtime.sendMessage({ type: "telemetry", event, fields: fields || {} });
+  } catch (e) {
+    try { console.warn("[zororo] telemetry message failed:", e); } catch { }
+    try { chrome.storage.local.set({ telemetryLastSendError: { at: new Date().toISOString(), ctx: "options", event, err: String(e && (e.message || e)) } }); } catch { }
+  }
+}
 /* @telemetry-end */
 
 const sizeState = { ororo: 100, imdb: 100 };
@@ -87,6 +105,12 @@ async function load() {
   /* @telemetry-start */
   const telToggle = document.getElementById("telemetryEnabled");
   if (telToggle) telToggle.checked = config.telemetryEnabled !== false;
+  const dbgToggle = document.getElementById("debugTelemetry");
+  if (dbgToggle) {
+    chrome.storage.local.get({ debugTelemetry: false }).then(({ debugTelemetry }) => {
+      dbgToggle.checked = debugTelemetry === true;
+    });
+  }
   lastConfig = { ...config };
   /* @telemetry-end */
 
@@ -122,10 +146,20 @@ function bindAutoSave() {
   const telEl = document.getElementById("telemetryEnabled");
   if (telEl) {
     telEl.addEventListener("change", () => {
-      if (!telEl.checked) chrome.runtime.sendMessage({ type: "telemetry", event: "opt_out", fields: {} });
+      if (!telEl.checked) tel("opt_out", {});
       persist();
     });
   }
+  const dbgEl = document.getElementById("debugTelemetry");
+  if (dbgEl) {
+    dbgEl.addEventListener("change", () => {
+      const enabled = dbgEl.checked;
+      chrome.storage.local.set({ debugTelemetry: enabled });
+      try { chrome.runtime.sendMessage({ type: "telemetry-debug", enabled }); } catch { }
+    });
+  }
+  const diagBtn = document.getElementById("export-diag-btn");
+  if (diagBtn) diagBtn.addEventListener("click", exportDiagnostics);
   /* @telemetry-end */
 }
 
@@ -162,7 +196,7 @@ function emitSettingChanges(config) {
     const cur = Array.isArray(v) ? v.join(",") : String(v);
     const prev = Array.isArray(lastConfig[k]) ? lastConfig[k].join(",") : String(lastConfig[k]);
     if (cur !== prev) {
-      chrome.runtime.sendMessage({ type: "telemetry", event: "setting", fields: { setting: k, value: k === "rootDir" ? "" : cur } });
+      tel("setting", { setting: k, value: k === "rootDir" ? "" : cur });
     }
   }
   lastConfig = { ...config };
@@ -214,6 +248,9 @@ async function exportWatched() {
   a.download = "zororo-watched-" + new Date().toISOString().slice(0, 10) + ".json";
   a.click();
   URL.revokeObjectURL(url);
+  /* @telemetry-start */
+  tel("library", { action: "export", count: (data.watched || []).length, surface: "options" });
+  /* @telemetry-end */
 }
 
 async function importWatched(file) {
@@ -225,6 +262,9 @@ async function importWatched(file) {
       if (!item.id) throw new Error("Item missing 'id' field");
     }
     await chrome.storage.local.set({ watched: data });
+    /* @telemetry-start */
+    tel("library", { action: "import", count: data.length, surface: "options" });
+    /* @telemetry-end */
     const status = document.getElementById("io-status");
     status.textContent = "Imported " + data.length + " watched items.";
     setTimeout(() => (status.textContent = ""), 3000);

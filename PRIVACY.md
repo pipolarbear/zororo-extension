@@ -47,10 +47,18 @@ turn it off in the options page (**Anonymous usage stats**).
 
 What is sent, and when:
 
-- **Events:** extension install/update, a daily "active" ping, content requests
-  (title + IMDb id), downloads started (title, media type, episode count), and
-  settings changes (the setting name and its new value), plus a one-time event
-  when you disable this.
+- **Events:** extension install/update and a daily "active" ping; content requests
+  (title, IMDb id, and media type); downloads started/failed/cancelled (title,
+  media type, episode count, season number or list, and — on failure — an error
+  *category*); **ratings** (title, media type, season number, and the star
+  value); settings changes (the setting name and its new value); feature
+  interactions: translate and IMDb/RT links (title, media type; add IMDb id for
+  IMDb links), the IMDb→ororo link and login prompt (title, media type, IMDb
+  id), and support, review, feedback, crypto, the Rated tab and its
+  sort/remove, and import/export (no content details); panel collapse/expand;
+  review-prompt actions; and error categories (auth, free-limit, not-found,
+  API) with the page title and media type; plus a one-time event when you
+  disable this.
 - **Identifier:** a **rotating** anonymous id. A random secret is generated and
   stored only on your device; the id sent is an HMAC of that secret with the
   current ISO week. Events in the same week share an id (so usage can be
@@ -64,6 +72,16 @@ What is sent, and when:
 
 The endpoint is a Google Form (`docs.google.com/forms`). Turning the option off
 stops all further sending (a single final event records the opt-out).
+
+### Local diagnostics (opt-in)
+
+If you enable **Debug → Capture local telemetry diagnostics**, the extension
+keeps a local log of telemetry delivery phases (including error messages and a
+short HTTP response snippet) in `chrome.storage.local`. This log never leaves
+your device, is not part of the usage statistics, and is deleted when you
+uninstall the extension or clear its data. **Export diagnostics** saves it to a
+file; on a delivery failure the extension may also write it to your Downloads
+folder.
 
 ### Network requests
 

@@ -26,7 +26,8 @@ examples:
 what it removes:
   - <dir>/src/telemetry.js
   - everything between the @telemetry-start / @telemetry-end markers in
-    <dir>/src/background.js, <dir>/src/options.js and <dir>/options.html
+    <dir>/src/background.js, options.js, content.js, imdb.js, donate.js
+    and <dir>/options.html
 """
 
 
@@ -40,7 +41,7 @@ def strip_telemetry(root):
         changed.append("removed src/telemetry.js")
 
     js_block = re.compile(r"/\* @telemetry-start \*/.*?/\* @telemetry-end \*/", re.S)
-    for rel in ("src/background.js", "src/options.js"):
+    for rel in ("src/background.js", "src/options.js", "src/content.js", "src/imdb.js", "src/donate.js"):
         path = os.path.join(root, rel)
         if os.path.exists(path):
             with open(path, encoding="utf-8") as fh:
