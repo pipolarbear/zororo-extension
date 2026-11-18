@@ -9,4 +9,9 @@ tools/usage-report.py
 tools/.usage.db
 tools/.usage.db-wal
 tools/.usage.db-shm
+tools/.usage-d1.db*
 __pycache__/
+
+telemetry-worker/node_modules/
+telemetry-worker/.wrangler/
+telemetry-worker/.dev.vars

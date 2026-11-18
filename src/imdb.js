@@ -17,6 +17,29 @@
   }
   /* @telemetry-end */
 
+  function createGearIcon() {
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("width", "24");
+    svg.setAttribute("height", "24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "#fff");
+    svg.setAttribute("stroke-width", "1.9");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    svg.setAttribute("aria-hidden", "true");
+    const circle = document.createElementNS(ns, "circle");
+    circle.setAttribute("cx", "12");
+    circle.setAttribute("cy", "12");
+    circle.setAttribute("r", "3");
+    svg.appendChild(circle);
+    const path = document.createElementNS(ns, "path");
+    path.setAttribute("d", "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 0 0 1.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z");
+    svg.appendChild(path);
+    return svg;
+  }
+
   let title = null;
   let year = null;
   let type = null;
@@ -56,7 +79,7 @@
   gear.id = "ororo-dl-settings-btn";
   gear.className = "btn-settings";
   gear.type = "button";
-  gear.textContent = "\u2699";
+  gear.appendChild(createGearIcon());
   gear.title = t("imdbSettings");
   gear.setAttribute("aria-label", t("imdbSettings"));
   gear.onclick = (e) => { e.stopPropagation(); chrome.runtime.sendMessage({ type: "open-options" }); };
@@ -116,10 +139,22 @@
 
   panel.appendChild(footer);
 
+  const defaultPanelIcon = chrome.runtime.getURL("icons/zoro.png");
   const collapseIcon = document.createElement("img");
   collapseIcon.className = "ororo-collapse-icon";
-  collapseIcon.src = chrome.runtime.getURL("icons/zoro.png");
+  collapseIcon.src = defaultPanelIcon;
   collapseIcon.alt = "Zororo";
+  function applyPanelIcon(active) {
+    collapseIcon.onerror = () => {
+      collapseIcon.onerror = null;
+      collapseIcon.src = defaultPanelIcon;
+    };
+    collapseIcon.src = active && active.value ? active.value : defaultPanelIcon;
+  }
+  chrome.storage.local.get({ panelIconActive: { kind: "default" } }, (d) => applyPanelIcon(d.panelIconActive));
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === "local" && changes.panelIconActive) applyPanelIcon(changes.panelIconActive.newValue);
+  });
   panel.appendChild(collapseIcon);
 
   document.body.appendChild(panel);

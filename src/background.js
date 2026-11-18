@@ -13,7 +13,9 @@ if (typeof importScripts === "function") {
 }
 function telemetry(event, fields) {
   try {
-    if (self.ZororoTelemetry) self.ZororoTelemetry.emit(event, fields);
+    // emit() only enqueues into durable storage, so it is safe not to await
+    // callers that do not care about completion.
+    return self.ZororoTelemetry?.emit?.(event, fields);
   } catch (e) {
     try { console.warn("[zororo] telemetry emit failed:", e); } catch { }
     try { chrome.storage.local.set({ telemetryLastSendError: { at: new Date().toISOString(), ctx: "background", event, err: String(e && (e.message || e)) } }); } catch { }
@@ -21,7 +23,7 @@ function telemetry(event, fields) {
 }
 (async () => {
   try {
-    await self.ZororoTelemetry?.checkPending?.("unconfirmed_posting");
+    await self.ZororoTelemetry?.checkPending?.("pending_outbox");
     await self.ZororoTelemetry?.boot?.({
       version: chrome.runtime.getManifest().version,
       online: typeof navigator !== "undefined" ? navigator.onLine : null,
@@ -266,6 +268,7 @@ async function processItem(item) {
       saveAs: false,
     });
     item.downloadId = downloadId;
+    item.startedAt = Date.now();
     item.status = "downloading";
 
     const wantedLangs = config.subtitleLangs || ["en"];
@@ -298,11 +301,22 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   switch (msg.type) {
     /* @telemetry-start */
     case "telemetry":
-      telemetry(msg.event, msg.fields || {});
-      return false;
+      // Returning true keeps the worker alive until the event is durably
+      // queued, so a tab closing right after the message cannot drop it.
+      (async () => {
+        try { await telemetry(msg.event, msg.fields || {}); } catch { }
+        sendResponse({ ok: true });
+      })();
+      return true;
     case "telemetry-debug":
       try { if (self.ZororoTelemetry && self.ZororoTelemetry.setDebug) self.ZororoTelemetry.setDebug(msg.enabled === true); } catch { }
       return false;
+    case "telemetry-status":
+      (async () => {
+        try { sendResponse(await self.ZororoTelemetry?.status?.()); }
+        catch { sendResponse(null); }
+      })();
+      return true;
     /* @telemetry-end */
     case "start-download":
       (async () => {
@@ -470,18 +484,56 @@ chrome.downloads.onChanged.addListener((delta) => {
   if (!item) return;
   if (delta.state.current === "complete") {
     item.status = "completed";
+    /* @telemetry-start */
+    telemetry("download", {
+      action: "completed",
+      title: item.showName || "",
+      media_type: "show",
+      season: item.season,
+      duration_ms: item.startedAt ? Date.now() - item.startedAt : undefined,
+    });
+    /* @telemetry-end */
   } else if (delta.state.current === "interrupted") {
-    item.status = delta.error?.current === "USER_CANCELED" ? "cancelled" : "failed";
-    item.error = delta.error?.current;
+    const error = delta.error?.current;
+    item.status = error === "USER_CANCELED" ? "cancelled" : "failed";
+    item.error = error;
+    /* @telemetry-start */
+    telemetry("download", {
+      action: error === "USER_CANCELED" ? "cancelled" : "failed",
+      title: item.showName || "",
+      media_type: "show",
+      season: item.season,
+      reason: error === "USER_CANCELED" ? "browser" : downloadErrorReason(error),
+      duration_ms: item.startedAt ? Date.now() - item.startedAt : undefined,
+    });
+    /* @telemetry-end */
   } else {
     return;
   }
   saveQueue().then(broadcast);
 });
 
-chrome.alarms.create("queue-watch", { periodInMinutes: 2 });
+async function ensureAlarms() {
+  try {
+    if (!(await chrome.alarms.get("queue-watch"))) {
+      await chrome.alarms.create("queue-watch", { periodInMinutes: 2 });
+    }
+  } catch { }
+}
+ensureAlarms();
+
 chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === "queue-watch") processNext();
+  if (alarm.name === "queue-watch") {
+    processNext();
+    return;
+  }
+  /* @telemetry-start */
+  if (alarm.name === "telemetry-ping") {
+    telemetry("active", {});
+  } else if (alarm.name === "telemetry-flush") {
+    try { self.ZororoTelemetry?.flush?.("alarm"); } catch { }
+  }
+  /* @telemetry-end */
 });
 
 /* @telemetry-start */
@@ -492,13 +544,23 @@ chrome.runtime.onInstalled.addListener(async (details) => {
       previousVersion: details.previousVersion || "",
     });
   } catch { }
-  if (details.reason === "install") telemetry("install", {});
-  else if (details.reason === "update") telemetry("update", { prev_version: details.previousVersion || "" });
+  try {
+    // First install only; upgrades of pre-telemetry versions start the clock here.
+    const { telemetryInstalledAt } = await chrome.storage.local.get({ telemetryInstalledAt: 0 });
+    if (!telemetryInstalledAt) await chrome.storage.local.set({ telemetryInstalledAt: Date.now() });
+  } catch { }
+  if (details.reason === "install") await telemetry("install", {});
+  else if (details.reason === "update") await telemetry("update", { prev_version: details.previousVersion || "" });
 });
-chrome.alarms.create("telemetry-ping", { periodInMinutes: 1440 });
-chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === "telemetry-ping") telemetry("active", {});
-});
+
+async function ensureTelemetryAlarms() {
+  try {
+    if (!(await chrome.alarms.get("telemetry-ping"))) {
+      await chrome.alarms.create("telemetry-ping", { periodInMinutes: 1440 });
+    }
+  } catch { }
+}
+ensureTelemetryAlarms();
 /* @telemetry-end */
 
 function slugify(str) {

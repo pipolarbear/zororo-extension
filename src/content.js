@@ -31,6 +31,29 @@ const PANEL_STATE_KEY = "zororoPanelState";
   }
   /* @telemetry-end */
 
+  function createGearIcon() {
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("width", "24");
+    svg.setAttribute("height", "24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "#fff");
+    svg.setAttribute("stroke-width", "1.9");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    svg.setAttribute("aria-hidden", "true");
+    const circle = document.createElementNS(ns, "circle");
+    circle.setAttribute("cx", "12");
+    circle.setAttribute("cy", "12");
+    circle.setAttribute("r", "3");
+    svg.appendChild(circle);
+    const path = document.createElementNS(ns, "path");
+    path.setAttribute("d", "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 0 0 1.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z");
+    svg.appendChild(path);
+    return svg;
+  }
+
   async function loadSortState() {
     const data = await chrome.storage.local.get({ watchedSortMode: "date", watchedSortAsc: false });
     sortState.mode = data.watchedSortMode;
@@ -572,7 +595,7 @@ const PANEL_STATE_KEY = "zororoPanelState";
     settingsBtn.id = "ororo-dl-settings-btn";
     settingsBtn.className = "btn-settings";
     settingsBtn.type = "button";
-    settingsBtn.textContent = "\u2699";
+    settingsBtn.appendChild(createGearIcon());
     settingsBtn.title = "Settings";
     settingsBtn.setAttribute("aria-label", "Settings");
     settingsBtn.onclick = () => {
@@ -652,10 +675,22 @@ const PANEL_STATE_KEY = "zororoPanelState";
       }
     }
 
+    const defaultPanelIcon = chrome.runtime.getURL("icons/zoro.png");
     const collapseIcon = document.createElement("img");
     collapseIcon.className = "ororo-collapse-icon";
-    collapseIcon.src = chrome.runtime.getURL("icons/zoro.png");
+    collapseIcon.src = defaultPanelIcon;
     collapseIcon.alt = "Zororo";
+    function applyPanelIcon(active) {
+      collapseIcon.onerror = () => {
+        collapseIcon.onerror = null;
+        collapseIcon.src = defaultPanelIcon;
+      };
+      collapseIcon.src = active && active.value ? active.value : defaultPanelIcon;
+    }
+    chrome.storage.local.get({ panelIconActive: { kind: "default" } }, (d) => applyPanelIcon(d.panelIconActive));
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area === "local" && changes.panelIconActive) applyPanelIcon(changes.panelIconActive.newValue);
+    });
     panel.appendChild(collapseIcon);
 
     setCollapsedScale(panel, config.collapsedSizeOroro);
@@ -878,13 +913,16 @@ const PANEL_STATE_KEY = "zororoPanelState";
     let overridden = entry ? !!entry.globalOverride : false;
 
     async function handleStarClick(i) {
+      const prevRating = currentRating;
       currentRating = currentRating === i ? 0 : i;
       /* @telemetry-start */
       tel("rating", {
         action: currentRating ? "rate" : "unrate",
         media_type: isMovie ? "movie" : "show",
         title: title || "",
+        show_id: showId == null ? "" : String(showId),
         value: currentRating || "",
+        prev_value: prevRating || "",
         surface: "ororo",
       });
       /* @telemetry-end */
@@ -986,8 +1024,10 @@ const PANEL_STATE_KEY = "zororoPanelState";
             action: next ? "rate" : "unrate",
             media_type: "show",
             title: showName || "",
+            show_id: showId == null ? "" : String(showId),
             season: season,
             value: next || "",
+            prev_value: current || "",
             surface: "ororo",
           });
           /* @telemetry-end */

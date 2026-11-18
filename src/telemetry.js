@@ -1,43 +1,56 @@
 // Anonymous, privacy-preserving usage telemetry (Chrome build only).
 // This file is excluded from the Firefox distribution by the build step.
 //
-// Rotating salted id: a random local secret is HMAC'd with the current ISO
-// week, so events within a week share an id (allowing "distinct users this
-// week") but cannot be linked across weeks. The secret never leaves the device.
+// Events go into a durable outbox in chrome.storage.local and are flushed in
+// batches to the Zororo telemetry Worker. Delivery is at-least-once; the
+// server dedupes on event_id. The rotating salted id is HMAC(salt, ISO week)
+// and is computed when an event is QUEUED, not when it is flushed, so an event
+// held offline across a week boundary is still attributed to the right week.
 //
-// Fill in FORM_URL + ENTRIES from your Google Form. Until FORM_URL is set,
-// emit() is a no-op and nothing is transmitted.
+// Until the build flag is set by .justfile, emit() is a no-op and nothing is
+// transmitted.
 (() => {
   // Build flag: "1" in store builds. Dev builds leave the placeholder, which
   // evaluates to false, so they never send. See .justfile.
   const TELEMETRY_ENABLED = "@TELEMETRY_ENABLED@" === "1";
 
-  const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSd3FqIZvDQzJgNpW-bAu-bSXptR5lRYyM-fhrBT84r45xXs3g/formResponse";
-  const ENTRIES = {
-    ts: "entry.1926782407",
-    event: "entry.498399457",
-    client_id: "entry.1211626556",
-    ext_version: "entry.940678058",
-    title: "entry.197144199",
-    imdb_id: "entry.1904038393",
-    media_type: "entry.1184686099",
-    count: "entry.848203221",
-    setting: "entry.759017310",
-    value: "entry.44871666",
-    prev_version: "entry.709085116",
-    action: "entry.1951417412",
-    surface: "entry.676088147",
-    season: "entry.764797288",
-    reason: "entry.1438446788",
-  };
+  const ENDPOINT = "https://zororo.xmousse.com/v1/events";
+  const SCHEMA = 2;
+  // Build channel: "store" for packaged builds, "dev" for dev-chrome. The
+  // report excludes dev rows unless explicitly asked for them.
+  const CHANNEL = "@TELEMETRY_CHANNEL@";
 
-  const MAX_PER_MINUTE = 20;
+  const OUTBOX_KEY = "telemetryOutbox";
+  const DROPPED_KEY = "telemetryDropped";
+  const REJECTED_KEY = "telemetryRejected";
+  const LAST_OK_KEY = "telemetryLastOkAt";
+  const BACKOFF_KEY = "telemetryBackoff";
+  const INSTALLED_KEY = "telemetryInstalledAt";
+  const SESSION_KEY = "telemetrySessionId";
+
+  const OUTBOX_MAX = 500;
+  const OUTBOX_MAX_CHARS = 256 * 1024;
+  const BATCH_MAX = 50;
+  const BATCH_MAX_CHARS = 28 * 1024;
+  const MAX_PER_MINUTE = 60;
+  const FLUSH_ALARM = "telemetry-flush";
+  const FLUSH_DELAY_MS = 2000;
+  const MAX_BACKOFF_MS = 60 * 60 * 1000;
+
   const DIAG_KEY = "telemetryDiag";
   const DIAG_MAX = 100;
+
   let sendTimes = [];
+  let flushTimer = null;
+  let flushing = null;
+  let weekCache = null;
+  let sessionCache = null;
+  let installedCache;
   // Serializes read-modify-write of the diagnostic log. Without this, boot,
   // onInstalled and emit phases can race and drop records.
   let diagChain = Promise.resolve();
+  // Same idea for the outbox: appends, acks and drops must not interleave.
+  let outboxChain = Promise.resolve();
 
   // Debug is opt-in (Options → Anonymous usage stats → Capture local telemetry
   // diagnostics). Cached for the lifetime of the worker; the options page
@@ -73,20 +86,6 @@
     return task;
   }
 
-  function isUnconfirmed(last) {
-    if (!last) return false;
-    if (last.phase === "gate") return last.enabled === true;
-    return ["onInstalled", "emit_start", "id_ok", "posting"].includes(last.phase);
-  }
-
-  async function checkPending(reason = "unconfirmed_posting") {
-    await diagChain.catch(() => { });
-    try {
-      const { [DIAG_KEY]: log = [] } = await chrome.storage.local.get({ [DIAG_KEY]: [] });
-      if (isUnconfirmed(log[log.length - 1])) await dumpDiagnostics(reason);
-    } catch { }
-  }
-
   // One boot record per browser session. storage.session survives worker
   // restarts but is cleared when the browser closes, so queue-watch waking the
   // worker every 2 minutes no longer floods the diagnostic log.
@@ -111,6 +110,7 @@
       } catch { }
     });
     diagChain = task.catch(() => { });
+    if (TELEMETRY_ENABLED) ensureAlarm();
     return task;
   }
 
@@ -118,13 +118,12 @@
     await diagChain.catch(() => { });
     try {
       if (!(await debugEnabled())) return;
-      const { [DIAG_KEY]: log = [], telemetryLastDumpKey = "" } =
-        await chrome.storage.local.get({ [DIAG_KEY]: [], telemetryLastDumpKey: "" });
+      const { [DIAG_KEY]: log = [], telemetryLastDumpAt = 0 } =
+        await chrome.storage.local.get({ [DIAG_KEY]: [], telemetryLastDumpAt: 0 });
       if (!log.length) return;
-      const last = log[log.length - 1];
-      const key = reason + "|" + (last && last.at) + "|" + (last && last.phase);
-      if (key === telemetryLastDumpKey) return;
-      await chrome.storage.local.set({ telemetryLastDumpKey: key });
+      // One automatic dump per hour, even if failures keep recurring.
+      if (Date.now() - telemetryLastDumpAt < 60 * 60 * 1000) return;
+      await chrome.storage.local.set({ telemetryLastDumpAt: Date.now() });
       const body = JSON.stringify({ reason, at: new Date().toISOString(), diag: log }, null, 2);
       const url = "data:application/json;charset=utf-8," + encodeURIComponent(body);
       await chrome.downloads.download({
@@ -166,9 +165,9 @@
     return date.getUTCFullYear() + "-W" + String(week).padStart(2, "0");
   }
 
-  async function rotatingId() {
+  async function weeklyId(week) {
+    if (weekCache && weekCache.week === week) return weekCache.id;
     let { telemetrySalt } = await chrome.storage.local.get({ telemetrySalt: null });
-    const hadSalt = !!telemetrySalt;
     if (!telemetrySalt) {
       telemetrySalt = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
       await chrome.storage.local.set({ telemetrySalt });
@@ -177,88 +176,326 @@
     const key = await crypto.subtle.importKey(
       "raw", enc.encode(telemetrySalt), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
     );
-    const sig = await crypto.subtle.sign("HMAC", key, enc.encode(isoWeekKey(new Date())));
+    const sig = await crypto.subtle.sign("HMAC", key, enc.encode(week));
     const id = Array.from(new Uint8Array(sig)).slice(0, 8).map((b) => b.toString(16).padStart(2, "0")).join("");
-    return { id, hadSalt };
+    weekCache = { week, id };
+    return id;
   }
 
-  function confirmationLooksPositive(text) {
-    return /response has been (recorded|sent)|antwort wurde gesendet|respuesta.*(enviada|registrada)|réponse.*(enregistrée|envoyée)|respuesta.*registrad/i.test(text || "");
-  }
-
-  async function emit(event, fields = {}) {
-    await diag("emit_start", { event, online: typeof navigator !== "undefined" ? navigator.onLine : null });
+  // Random per browser session (storage.session is cleared on browser close).
+  // Gives within-session ordering without any cross-session identifier.
+  async function sessionId() {
+    if (sessionCache !== null) return sessionCache;
     try {
-      if (!TELEMETRY_ENABLED) { await diag("build_disabled", { event }); return; }
-      if (!FORM_URL || FORM_URL.includes("REPLACE_FORM_ID")) { await diag("no_form_url", { event }); return; }
-      if (event !== "opt_out") {
-        const enabled = await isEnabled();
-        await diag("gate", { event, enabled });
-        if (!enabled) return;
+      const { [SESSION_KEY]: existing } = await chrome.storage.session.get({ [SESSION_KEY]: null });
+      if (existing) {
+        sessionCache = existing;
+        return existing;
       }
-      if (!rateOk()) { await diag("rate_limited", { event }); return; }
+      const id = crypto.randomUUID().replace(/-/g, "").slice(0, 24);
+      await chrome.storage.session.set({ [SESSION_KEY]: id });
+      sessionCache = id;
+    } catch {
+      sessionCache = "";
+    }
+    return sessionCache;
+  }
 
-      let idInfo;
-      try {
-        idInfo = await rotatingId();
-        await diag("id_ok", { event, hadSalt: idInfo.hadSalt });
-      } catch (e) {
-        await diag("id_error", { event, err: String(e && (e.message || e)) });
-        throw e;
+  async function installedAgeDays() {
+    try {
+      if (installedCache === undefined) {
+        const { [INSTALLED_KEY]: at } = await chrome.storage.local.get({ [INSTALLED_KEY]: 0 });
+        installedCache = at || 0;
+        if (!installedCache) {
+          // Existing install upgrading to this version: start the clock now.
+          installedCache = Date.now();
+          await chrome.storage.local.set({ [INSTALLED_KEY]: installedCache });
+        }
       }
-
-      const row = {
-        ts: new Date().toISOString(),
-        event,
-        client_id: idInfo.id,
-        ext_version: chrome.runtime.getManifest().version,
-        ...fields,
-      };
-      const params = new URLSearchParams();
-      for (const [k, v] of Object.entries(row)) {
-        if (ENTRIES[k] && v !== undefined && v !== null && v !== "") params.set(ENTRIES[k], String(v));
-      }
-      const body = params.toString();
-      await diag("posting", { event, body });
-
-      let resp;
-      try {
-        resp = await fetch(FORM_URL, {
-          method: "POST",
-          mode: "no-cors",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body,
-        });
-      } catch (e) {
-        await diag("fetch_error", {
-          event,
-          name: String(e && e.name),
-          err: String(e && (e.message || e)),
-          online: typeof navigator !== "undefined" ? navigator.onLine : null,
-        });
-        await dumpDiagnostics("fetch_error");
-        return;
-      }
-
-      let snippet = "";
-      try {
-        const raw = await resp.text();
-        snippet = raw.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ")
-          .replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 200);
-      } catch (e) { snippet = "unreadable:" + String(e && (e.message || e)); }
-      await diag("fetch_resolved", {
-        event,
-        status: resp.status,
-        type: resp.type,
-        ok: resp.ok,
-        likelyConfirmed: confirmationLooksPositive(snippet),
-        snippet,
-      });
-    } catch (e) {
-      await diag("error", { event, name: String(e && e.name), err: String(e && (e.message || e)), stack: e && e.stack ? String(e.stack).slice(0, 400) : "" });
-      try { console.warn("[zororo] telemetry send failed:", e); } catch { }
+      return Math.max(0, Math.floor((Date.now() - installedCache) / 86400000));
+    } catch {
+      return undefined;
     }
   }
 
-  self.ZororoTelemetry = { emit, diag, boot, checkPending, dumpDiagnostics, setDebug };
+  async function buildPayload(event, fields) {
+    const now = new Date();
+    const week = isoWeekKey(now);
+    const [client_id, session_id, install_age_days] = await Promise.all([
+      weeklyId(week), sessionId(), installedAgeDays(),
+    ]);
+    const f = { ...fields };
+    // Legacy call sites still send `count`; the schema renamed it item_count.
+    if (f.count !== undefined && f.item_count === undefined) f.item_count = f.count;
+    delete f.count;
+    if (f.season !== undefined && f.season !== null) f.season = String(f.season);
+    if (f.value !== undefined && f.value !== null) f.value = String(f.value);
+    if (f.prev_value !== undefined && f.prev_value !== null) f.prev_value = String(f.prev_value);
+    if (f.show_id !== undefined && f.show_id !== null) f.show_id = String(f.show_id);
+    if (f.item_count !== undefined && f.item_count !== null) {
+      const n = Number(f.item_count);
+      if (Number.isFinite(n)) f.item_count = Math.max(0, Math.round(n));
+      else delete f.item_count;
+    }
+    if (f.duration_ms !== undefined && f.duration_ms !== null) {
+      const n = Number(f.duration_ms);
+      if (Number.isFinite(n)) f.duration_ms = Math.max(0, Math.round(n));
+      else delete f.duration_ms;
+    }
+    if (typeof f.title === "string") f.title = f.title.slice(0, 200);
+    return {
+      ...f,
+      event_id: crypto.randomUUID(),
+      ts: now.toISOString(),
+      schema: SCHEMA,
+      event,
+      client_id,
+      session_id,
+      ext_version: chrome.runtime.getManifest().version,
+      install_age_days,
+      channel: CHANNEL,
+    };
+  }
+
+  function outboxTask(fn) {
+    const task = outboxChain.then(async () => {
+      const { [OUTBOX_KEY]: items = [] } = await chrome.storage.local.get({ [OUTBOX_KEY]: [] });
+      const [next, result] = await fn(items);
+      await chrome.storage.local.set({ [OUTBOX_KEY]: next });
+      return result;
+    });
+    outboxChain = task.catch(() => { });
+    return task;
+  }
+
+  function payloadSize(p) {
+    try { return JSON.stringify(p).length; } catch { return 0; }
+  }
+
+  function appendOutbox(item) {
+    return outboxTask(async (items) => {
+      items.push(item);
+      let dropped = 0;
+      while (items.length > OUTBOX_MAX) {
+        items.shift();
+        dropped++;
+      }
+      let chars = items.reduce((n, it) => n + payloadSize(it.payload), 0);
+      while (chars > OUTBOX_MAX_CHARS && items.length > 1) {
+        chars -= payloadSize(items.shift().payload);
+        dropped++;
+      }
+      return [items, dropped];
+    });
+  }
+
+  function ackOutbox(ids) {
+    const drop = new Set(ids);
+    return outboxTask(async (items) => [items.filter((it) => !drop.has(it.id)), ids.length]);
+  }
+
+  async function bump(key, by) {
+    try {
+      const cur = (await chrome.storage.local.get({ [key]: 0 }))[key] || 0;
+      await chrome.storage.local.set({ [key]: cur + by });
+    } catch { }
+  }
+
+  async function ensureAlarm() {
+    try {
+      if (!(await chrome.alarms.get(FLUSH_ALARM))) {
+        await chrome.alarms.create(FLUSH_ALARM, { periodInMinutes: 5 });
+      }
+    } catch { }
+  }
+
+  function scheduleFlush() {
+    if (flushTimer) return;
+    flushTimer = setTimeout(() => {
+      flushTimer = null;
+      flush("debounce");
+    }, FLUSH_DELAY_MS);
+  }
+
+  async function setBackoff(delayMs, fails) {
+    const jitter = Math.floor(Math.random() * 5000);
+    await chrome.storage.local.set({
+      [BACKOFF_KEY]: { nextAt: Date.now() + delayMs + jitter, fails: fails || 1 },
+    });
+  }
+
+  async function onFlushFailure(reason, err, status) {
+    const { [BACKOFF_KEY]: b = { nextAt: 0, fails: 0 } } =
+      await chrome.storage.local.get({ [BACKOFF_KEY]: { nextAt: 0, fails: 0 } });
+    const fails = (b.fails || 0) + 1;
+    const delay = Math.min(MAX_BACKOFF_MS, 60 * 1000 * Math.pow(4, fails - 1));
+    await setBackoff(delay, fails);
+    await diag("flush_failed", {
+      reason,
+      status,
+      fails,
+      delayMs: delay,
+      name: String(err && err.name),
+      err: String(err && (err.message || err)),
+    });
+    if (fails >= 3) await dumpDiagnostics("flush_failed");
+  }
+
+  async function doFlush(reason) {
+    await diag("flush_start", { reason });
+    if (!TELEMETRY_ENABLED || !ENDPOINT) return;
+
+    const { [OUTBOX_KEY]: snapshot = [] } = await chrome.storage.local.get({ [OUTBOX_KEY]: [] });
+    if (!snapshot.length) {
+      await diag("flush_empty");
+      return;
+    }
+
+    const { [BACKOFF_KEY]: backoff = { nextAt: 0, fails: 0 } } =
+      await chrome.storage.local.get({ [BACKOFF_KEY]: { nextAt: 0, fails: 0 } });
+    if (backoff.nextAt && backoff.nextAt > Date.now()) {
+      await diag("flush_backoff", { until: new Date(backoff.nextAt).toISOString() });
+      return;
+    }
+
+    const enabled = await isEnabled();
+    let queue = snapshot;
+    if (!enabled) {
+      // Consent withdrawn: only the opt-out record itself may still leave.
+      queue = snapshot.filter((it) => it.payload && it.payload.event === "opt_out");
+      const dropped = snapshot.length - queue.length;
+      if (dropped > 0) {
+        const keep = new Set(queue.map((it) => it.id));
+        await outboxTask(async (items) => [items.filter((it) => keep.has(it.id)), true]);
+        await bump(DROPPED_KEY, dropped);
+        await diag("flush_disabled_drop", { dropped });
+      }
+    }
+    if (!queue.length) return;
+
+    const batch = [];
+    let chars = 0;
+    for (const item of queue) {
+      const size = payloadSize(item.payload);
+      if (batch.length >= BATCH_MAX) break;
+      if (batch.length && chars + size > BATCH_MAX_CHARS) break;
+      batch.push(item);
+      chars += size;
+    }
+
+    const body = JSON.stringify({ schema: SCHEMA, events: batch.map((it) => it.payload) });
+    await diag("posting", { reason, count: batch.length, chars: body.length });
+
+    let resp;
+    try {
+      resp = await fetch(ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body,
+      });
+    } catch (e) {
+      await onFlushFailure(reason, e, null);
+      return;
+    }
+
+    if (resp.ok) {
+      let info = null;
+      try { info = await resp.json(); } catch { }
+      await ackOutbox(batch.map((it) => it.id));
+      await chrome.storage.local.set({
+        [LAST_OK_KEY]: new Date().toISOString(),
+        [BACKOFF_KEY]: { nextAt: 0, fails: 0 },
+      });
+      if (info && info.rejected) await bump(REJECTED_KEY, info.rejected);
+      await diag("flush_ok", {
+        count: batch.length,
+        accepted: info ? info.accepted : null,
+        inserted: info ? info.inserted : null,
+        rejected: info ? info.rejected : null,
+      });
+      // More may be waiting beyond this batch.
+      if (queue.length > batch.length) scheduleFlush();
+      return;
+    }
+
+    if (resp.status === 429) {
+      const retry = parseInt(resp.headers.get("Retry-After") || "60", 10);
+      await setBackoff(Math.max(10, retry) * 1000, 0);
+      await diag("flush_429", { retry });
+      return;
+    }
+
+    if (resp.status >= 400 && resp.status < 500) {
+      // The batch is not going to become acceptable by retrying it.
+      await ackOutbox(batch.map((it) => it.id));
+      await bump(DROPPED_KEY, batch.length);
+      await diag("flush_drop", { status: resp.status, count: batch.length });
+      return;
+    }
+
+    await onFlushFailure(reason, null, resp.status);
+  }
+
+  function flush(reason = "manual") {
+    if (!TELEMETRY_ENABLED) return Promise.resolve();
+    if (flushing) return flushing;
+    flushing = doFlush(reason).catch(() => { }).finally(() => { flushing = null; });
+    return flushing;
+  }
+
+  async function emit(event, fields = {}) {
+    try {
+      await diag("emit_start", { event });
+      if (!TELEMETRY_ENABLED) { await diag("build_disabled", { event }); return; }
+      if (!event) return;
+      if (event !== "opt_out") {
+        const enabled = await isEnabled();
+        if (!enabled) { await diag("gate", { event, enabled: false }); return; }
+      }
+      if (!rateOk()) { await diag("rate_limited", { event }); return; }
+      const payload = await buildPayload(event, fields);
+      const dropped = await appendOutbox({ id: payload.event_id, payload });
+      if (dropped) await bump(DROPPED_KEY, dropped);
+      await diag("enqueued", { event, dropped });
+      ensureAlarm();
+      scheduleFlush();
+    } catch (e) {
+      await diag("error", { event, name: String(e && e.name), err: String(e && (e.message || e)) });
+    }
+  }
+
+  async function checkPending(reason = "pending_outbox") {
+    await outboxChain.catch(() => { });
+    try {
+      const { [OUTBOX_KEY]: outbox = [] } = await chrome.storage.local.get({ [OUTBOX_KEY]: [] });
+      if (outbox.length) await flush(reason);
+    } catch { }
+  }
+
+  async function status() {
+    try {
+      const d = await chrome.storage.local.get({
+        [OUTBOX_KEY]: [],
+        [DROPPED_KEY]: 0,
+        [REJECTED_KEY]: 0,
+        [LAST_OK_KEY]: "",
+        [BACKOFF_KEY]: { nextAt: 0, fails: 0 },
+      });
+      return {
+        enabled: await isEnabled(),
+        buildEnabled: TELEMETRY_ENABLED,
+        outbox: d[OUTBOX_KEY].length,
+        dropped: d[DROPPED_KEY],
+        rejected: d[REJECTED_KEY],
+        lastOkAt: d[LAST_OK_KEY],
+        nextAttemptAt: d[BACKOFF_KEY].nextAt || 0,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  self.ZororoTelemetry = {
+    emit, flush, status, diag, boot, checkPending, dumpDiagnostics, setDebug,
+  };
 })();
