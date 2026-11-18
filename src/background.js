@@ -9,10 +9,36 @@ const extCache = new Map();
 
 /* @telemetry-start */
 if (typeof importScripts === "function") {
-  try { importScripts("telemetry.js"); } catch { }
+  try { importScripts("telemetry.js"); } catch (e) { try { console.warn("[zororo] importScripts(telemetry.js) failed:", e); } catch { } }
 }
 function telemetry(event, fields) {
-  try { if (self.ZororoTelemetry) self.ZororoTelemetry.emit(event, fields); } catch { }
+  try {
+    // emit() only enqueues into durable storage, so it is safe not to await
+    // callers that do not care about completion.
+    return self.ZororoTelemetry?.emit?.(event, fields);
+  } catch (e) {
+    try { console.warn("[zororo] telemetry emit failed:", e); } catch { }
+    try { chrome.storage.local.set({ telemetryLastSendError: { at: new Date().toISOString(), ctx: "background", event, err: String(e && (e.message || e)) } }); } catch { }
+  }
+}
+(async () => {
+  try {
+    await self.ZororoTelemetry?.checkPending?.("pending_outbox");
+    await self.ZororoTelemetry?.boot?.({
+      version: chrome.runtime.getManifest().version,
+      online: typeof navigator !== "undefined" ? navigator.onLine : null,
+    });
+  } catch { }
+})();
+function downloadErrorReason(msg) {
+  const s = String(msg || "").toLowerCase();
+  if (s.includes("auth") || s.includes("401") || s.includes("403")) return "auth";
+  if (s.includes("402") || s.includes("limit")) return "free_limit";
+  if (s.includes("cancel")) return "cancelled";
+  if (s.includes("url")) return "invalid_url";
+  if (s.includes("network") || s.includes("timeout") || s.includes("fetch")) return "network";
+  if (s.includes("disk") || s.includes("quota") || s.includes("space")) return "disk";
+  return "unknown";
 }
 /* @telemetry-end */
 
@@ -160,7 +186,7 @@ async function checkOroro(imdbId) {
   return { loggedIn: true, found: false, requested: !!rec, requestedAt: rec ? rec.requestedAt : null };
 }
 
-async function requestContent(title, imdbId) {
+async function requestContent(title, imdbId, mediaType) {
   const raw = /^tt\d+$/i.test(String(imdbId)) ? String(imdbId) : "tt" + (normalizeImdbId(imdbId) || "");
   const modalResp = await fetch("https://ororo.tv/en/modals/contentRequest", { credentials: "include" });
   if (modalResp.status === 401) return { ok: false, loggedIn: false };
@@ -185,14 +211,14 @@ async function requestContent(title, imdbId) {
     chrome.tabs.create({ url: "https://ororo.tv/en#zororo-request=" + payload });
     await recordRequest(title, imdbId);
     /* @telemetry-start */
-    telemetry("request", { title: title || "", imdb_id: raw });
+    telemetry("request", { action: "fallback", title: title || "", imdb_id: raw, media_type: mediaType || "" });
     /* @telemetry-end */
     return { ok: true, viaTab: true };
   }
   if (!resp.ok) return { ok: false, error: "http-" + resp.status };
   await recordRequest(title, imdbId);
   /* @telemetry-start */
-  telemetry("request", { title: title || "", imdb_id: raw });
+  telemetry("request", { action: "direct", title: title || "", imdb_id: raw, media_type: mediaType || "" });
   /* @telemetry-end */
   return { ok: true };
 }
@@ -242,6 +268,7 @@ async function processItem(item) {
       saveAs: false,
     });
     item.downloadId = downloadId;
+    item.startedAt = Date.now();
     item.status = "downloading";
 
     const wantedLangs = config.subtitleLangs || ["en"];
@@ -262,6 +289,9 @@ async function processItem(item) {
   } catch (err) {
     item.status = "failed";
     item.error = err.message;
+    /* @telemetry-start */
+    telemetry("download", { action: "failed", title: item.showName || "", media_type: "show", season: item.season, reason: downloadErrorReason(err.message) });
+    /* @telemetry-end */
   }
 }
 
@@ -271,8 +301,22 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   switch (msg.type) {
     /* @telemetry-start */
     case "telemetry":
-      telemetry(msg.event, msg.fields || {});
+      // Returning true keeps the worker alive until the event is durably
+      // queued, so a tab closing right after the message cannot drop it.
+      (async () => {
+        try { await telemetry(msg.event, msg.fields || {}); } catch { }
+        sendResponse({ ok: true });
+      })();
+      return true;
+    case "telemetry-debug":
+      try { if (self.ZororoTelemetry && self.ZororoTelemetry.setDebug) self.ZororoTelemetry.setDebug(msg.enabled === true); } catch { }
       return false;
+    case "telemetry-status":
+      (async () => {
+        try { sendResponse(await self.ZororoTelemetry?.status?.()); }
+        catch { sendResponse(null); }
+      })();
+      return true;
     /* @telemetry-end */
     case "start-download":
       (async () => {
@@ -297,6 +341,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
         let queuedCount = 0;
         let skippedCount = 0;
+        const queuedSeasons = new Set();
         for (const ep of msg.episodes) {
           if (onDisk.has(Number(ep.number))) {
             skippedCount++;
@@ -320,6 +365,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
               status: "queued",
             });
             queuedCount++;
+            queuedSeasons.add(ep.season);
           }
         }
         if (queuedCount > 0) {
@@ -328,7 +374,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           processNext();
         }
         /* @telemetry-start */
-        if (queuedCount > 0) telemetry("download", { title: msg.showName || "", media_type: "show", count: queuedCount });
+        if (queuedCount > 0) {
+          // season is a single number, or a comma-separated list when the batch spans seasons.
+          const seasonList = Array.from(queuedSeasons).sort((a, b) => Number(a) - Number(b)).join(",");
+          telemetry("download", { action: "enqueue", title: msg.showName || "", media_type: "show", count: queuedCount, season: seasonList });
+        }
         /* @telemetry-end */
         sendResponse({ ok: true, queued: queuedCount, skipped: skippedCount });
       })();
@@ -342,13 +392,22 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       }
       return true;
 
-    case "cancel-all":
-      queue = queue.map((e) =>
-        e.status === "queued" ? { ...e, status: "cancelled" } : e
-      );
+    case "cancel-all": {
+      let cancelled = 0;
+      queue = queue.map((e) => {
+        if (e.status === "queued") {
+          cancelled++;
+          return { ...e, status: "cancelled" };
+        }
+        return e;
+      });
       saveQueue().then(broadcast);
+      /* @telemetry-start */
+      if (cancelled > 0) telemetry("download", { action: "cancelled", count: cancelled });
+      /* @telemetry-end */
       sendResponse({ ok: true });
       break;
+    }
 
     case "clean-all":
       queue = [];
@@ -375,7 +434,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     case "request-content": {
       (async () => {
         try {
-          sendResponse(await requestContent(msg.title, msg.imdbId));
+          sendResponse(await requestContent(msg.title, msg.imdbId, msg.mediaType));
         } catch (e) {
           sendResponse({ ok: false, error: e.message });
         }
@@ -425,29 +484,83 @@ chrome.downloads.onChanged.addListener((delta) => {
   if (!item) return;
   if (delta.state.current === "complete") {
     item.status = "completed";
+    /* @telemetry-start */
+    telemetry("download", {
+      action: "completed",
+      title: item.showName || "",
+      media_type: "show",
+      season: item.season,
+      duration_ms: item.startedAt ? Date.now() - item.startedAt : undefined,
+    });
+    /* @telemetry-end */
   } else if (delta.state.current === "interrupted") {
-    item.status = delta.error?.current === "USER_CANCELED" ? "cancelled" : "failed";
-    item.error = delta.error?.current;
+    const error = delta.error?.current;
+    item.status = error === "USER_CANCELED" ? "cancelled" : "failed";
+    item.error = error;
+    /* @telemetry-start */
+    telemetry("download", {
+      action: error === "USER_CANCELED" ? "cancelled" : "failed",
+      title: item.showName || "",
+      media_type: "show",
+      season: item.season,
+      reason: error === "USER_CANCELED" ? "browser" : downloadErrorReason(error),
+      duration_ms: item.startedAt ? Date.now() - item.startedAt : undefined,
+    });
+    /* @telemetry-end */
   } else {
     return;
   }
   saveQueue().then(broadcast);
 });
 
-chrome.alarms.create("queue-watch", { periodInMinutes: 2 });
+async function ensureAlarms() {
+  try {
+    if (!(await chrome.alarms.get("queue-watch"))) {
+      await chrome.alarms.create("queue-watch", { periodInMinutes: 2 });
+    }
+  } catch { }
+}
+ensureAlarms();
+
 chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === "queue-watch") processNext();
+  if (alarm.name === "queue-watch") {
+    processNext();
+    return;
+  }
+  /* @telemetry-start */
+  if (alarm.name === "telemetry-ping") {
+    telemetry("active", {});
+  } else if (alarm.name === "telemetry-flush") {
+    try { self.ZororoTelemetry?.flush?.("alarm"); } catch { }
+  }
+  /* @telemetry-end */
 });
 
 /* @telemetry-start */
-chrome.runtime.onInstalled.addListener((details) => {
-  if (details.reason === "install") telemetry("install", {});
-  else if (details.reason === "update") telemetry("update", { prev_version: details.previousVersion || "" });
+chrome.runtime.onInstalled.addListener(async (details) => {
+  try {
+    await self.ZororoTelemetry?.diag?.("onInstalled", {
+      reason: details.reason,
+      previousVersion: details.previousVersion || "",
+    });
+  } catch { }
+  try {
+    // First install only; upgrades of pre-telemetry versions start the clock here.
+    const { telemetryInstalledAt } = await chrome.storage.local.get({ telemetryInstalledAt: 0 });
+    if (!telemetryInstalledAt) await chrome.storage.local.set({ telemetryInstalledAt: Date.now() });
+  } catch { }
+  if (details.reason === "install") await telemetry("install", {});
+  else if (details.reason === "update") await telemetry("update", { prev_version: details.previousVersion || "" });
 });
-chrome.alarms.create("telemetry-ping", { periodInMinutes: 1440 });
-chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === "telemetry-ping") telemetry("active", {});
-});
+
+async function ensureTelemetryAlarms() {
+  try {
+    if (!(await chrome.alarms.get("telemetry-ping"))) {
+      await chrome.alarms.create("telemetry-ping", { periodInMinutes: 1440 });
+    }
+  } catch { }
+}
+ensureTelemetryAlarms();
 /* @telemetry-end */
 
 function slugify(str) {

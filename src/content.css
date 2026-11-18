@@ -294,8 +294,8 @@
 
 #ororo-dl-panel .title-row .btn-settings {
   flex: 0 0 auto;
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
   padding: 0;
   display: inline-flex;
   align-items: center;
@@ -305,8 +305,23 @@
   color: #fff;
   border: none;
   border-radius: 6px;
-  font-size: 20px;
   cursor: pointer;
+}
+
+#ororo-dl-panel .title-row .btn-settings svg,
+#ororo-dl-panel .title-row .btn-settings svg * {
+  fill: none !important;
+  stroke: #fff !important;
+  stroke-width: 1.9 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+#ororo-dl-panel .title-row .btn-settings svg {
+  display: block !important;
+  width: 24px !important;
+  height: 24px !important;
+  transform: translate(2.3px, -5px) !important;
 }
 
 #ororo-dl-panel .title-row .btn-settings:hover {
@@ -853,6 +868,7 @@
   display: none;
   width: calc(128px * var(--zoro-collapsed-scale, 1));
   height: calc(128px * var(--zoro-collapsed-scale, 1));
+  object-fit: contain;
 }
 #ororo-dl-panel.collapsed .ororo-collapse-icon {
   display: block !important;

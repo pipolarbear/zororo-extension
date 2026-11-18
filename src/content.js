@@ -20,6 +20,39 @@ const PANEL_STATE_KEY = "zororoPanelState";
   let posterUrl = null;
   const pendingDeletions = new Set();
   const sortState = { mode: "date", ascending: false };
+  /* @telemetry-start */
+  function tel(event, fields) {
+    try {
+      chrome.runtime.sendMessage({ type: "telemetry", event, fields: fields || {} });
+    } catch (e) {
+      try { console.warn("[zororo] telemetry message failed:", e); } catch { }
+      try { chrome.storage.local.set({ telemetryLastSendError: { at: new Date().toISOString(), ctx: "content", event, err: String(e && (e.message || e)) } }); } catch { }
+    }
+  }
+  /* @telemetry-end */
+
+  function createGearIcon() {
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("width", "24");
+    svg.setAttribute("height", "24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "#fff");
+    svg.setAttribute("stroke-width", "1.9");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    svg.setAttribute("aria-hidden", "true");
+    const circle = document.createElementNS(ns, "circle");
+    circle.setAttribute("cx", "12");
+    circle.setAttribute("cy", "12");
+    circle.setAttribute("r", "3");
+    svg.appendChild(circle);
+    const path = document.createElementNS(ns, "path");
+    path.setAttribute("d", "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 0 0 1.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z");
+    svg.appendChild(path);
+    return svg;
+  }
 
   async function loadSortState() {
     const data = await chrome.storage.local.get({ watchedSortMode: "date", watchedSortAsc: false });
@@ -225,10 +258,14 @@ const PANEL_STATE_KEY = "zororoPanelState";
       e.preventDefault();
       const wasEditing = panel.classList.contains("editing");
       if (wasEditing && pendingDeletions.size > 0) {
+        const removed = pendingDeletions.size;
         for (const id of pendingDeletions) {
           await removeWatchedItem(id);
         }
         pendingDeletions.clear();
+        /* @telemetry-start */
+        tel("library", { action: "remove", count: removed, surface: "ororo" });
+        /* @telemetry-end */
       }
       panel.classList.toggle("editing");
       editLink.textContent = panel.classList.contains("editing") ? t("done") : t("edit");
@@ -245,6 +282,9 @@ const PANEL_STATE_KEY = "zororoPanelState";
     }
 
     btn.onclick = () => {
+      /* @telemetry-start */
+      tel("library", { action: "open", surface: "ororo" });
+      /* @telemetry-end */
       tabList.querySelectorAll(".favorites-tabs-item").forEach((t) => t.classList.remove("active"));
       li.classList.add("active");
       content.querySelectorAll(".favorites-content-item").forEach((p) => { p.style.display = "none"; });
@@ -417,13 +457,13 @@ const PANEL_STATE_KEY = "zororoPanelState";
       c: [{ t: "text", a: { x: "4", y: "18", "font-family": "sans-serif", "font-weight": "bold", "font-size": "14", fill: "currentColor" }, text: "A" }, { t: "text", a: { x: "14", y: "18", "font-family": "sans-serif", "font-weight": "bold", "font-size": "14", fill: "currentColor" }, text: "Z" }]
     };
 
-    const starBtn = btn("Sort by rating", starDesc, sortState.mode === "rating", () => { sortState.mode = "rating"; saveSortState(); renderWatchedDropdown(panel); });
+    const starBtn = btn("Sort by rating", starDesc, sortState.mode === "rating", () => { /* @telemetry-start */ tel("library", { action: "sort", value: "rating", surface: "ororo" }); /* @telemetry-end */ sortState.mode = "rating"; saveSortState(); renderWatchedDropdown(panel); });
     sortArea.appendChild(starBtn);
 
-    const clockBtn = btn("By date rated", clockDesc, sortState.mode === "date", () => { sortState.mode = "date"; saveSortState(); renderWatchedDropdown(panel); });
+    const clockBtn = btn("By date rated", clockDesc, sortState.mode === "date", () => { /* @telemetry-start */ tel("library", { action: "sort", value: "date", surface: "ororo" }); /* @telemetry-end */ sortState.mode = "date"; saveSortState(); renderWatchedDropdown(panel); });
     sortArea.appendChild(clockBtn);
 
-    const alphaBtn = btn("Sort alphabetically", alphaDesc, sortState.mode === "alpha", () => { sortState.mode = "alpha"; saveSortState(); renderWatchedDropdown(panel); });
+    const alphaBtn = btn("Sort alphabetically", alphaDesc, sortState.mode === "alpha", () => { /* @telemetry-start */ tel("library", { action: "sort", value: "alpha", surface: "ororo" }); /* @telemetry-end */ sortState.mode = "alpha"; saveSortState(); renderWatchedDropdown(panel); });
     sortArea.appendChild(alphaBtn);
 
     const sep = document.createElement("div");
@@ -555,7 +595,7 @@ const PANEL_STATE_KEY = "zororoPanelState";
     settingsBtn.id = "ororo-dl-settings-btn";
     settingsBtn.className = "btn-settings";
     settingsBtn.type = "button";
-    settingsBtn.textContent = "\u2699";
+    settingsBtn.appendChild(createGearIcon());
     settingsBtn.title = "Settings";
     settingsBtn.setAttribute("aria-label", "Settings");
     settingsBtn.onclick = () => {
@@ -613,6 +653,9 @@ const PANEL_STATE_KEY = "zororoPanelState";
     reviewBtn.className = "review-btn";
     reviewBtn.textContent = "★ " + t("reviewUs");
     reviewBtn.onclick = () => {
+      /* @telemetry-start */
+      tel("feature", { action: "review", surface: "ororo" });
+      /* @telemetry-end */
       chrome.storage.local.set({ zororoRated: true });
       window.open(RATE_URL, "_blank");
     };
@@ -632,10 +675,22 @@ const PANEL_STATE_KEY = "zororoPanelState";
       }
     }
 
+    const defaultPanelIcon = chrome.runtime.getURL("icons/zoro.png");
     const collapseIcon = document.createElement("img");
     collapseIcon.className = "ororo-collapse-icon";
-    collapseIcon.src = chrome.runtime.getURL("icons/zoro.png");
+    collapseIcon.src = defaultPanelIcon;
     collapseIcon.alt = "Zororo";
+    function applyPanelIcon(active) {
+      collapseIcon.onerror = () => {
+        collapseIcon.onerror = null;
+        collapseIcon.src = defaultPanelIcon;
+      };
+      collapseIcon.src = active && active.value ? active.value : defaultPanelIcon;
+    }
+    chrome.storage.local.get({ panelIconActive: { kind: "default" } }, (d) => applyPanelIcon(d.panelIconActive));
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area === "local" && changes.panelIconActive) applyPanelIcon(changes.panelIconActive.newValue);
+    });
     panel.appendChild(collapseIcon);
 
     setCollapsedScale(panel, config.collapsedSizeOroro);
@@ -648,10 +703,16 @@ const PANEL_STATE_KEY = "zororoPanelState";
     closeBtn.onclick = (e) => {
       e.stopPropagation();
       panel.classList.toggle("collapsed");
+      /* @telemetry-start */
+      tel("panel", { action: panel.classList.contains("collapsed") ? "collapse" : "expand", surface: "ororo", reason: "close" });
+      /* @telemetry-end */
       chrome.storage.local.set({ [PANEL_STATE_KEY]: panel.classList.contains("collapsed") ? "collapsed" : "expanded" });
     };
     panel.onclick = (e) => {
       if (panel.classList.contains("collapsed")) {
+        /* @telemetry-start */
+        tel("panel", { action: "expand", surface: "ororo", reason: "panel" });
+        /* @telemetry-end */
         panel.classList.remove("collapsed");
         chrome.storage.local.set({ [PANEL_STATE_KEY]: "expanded" });
       }
@@ -659,6 +720,9 @@ const PANEL_STATE_KEY = "zororoPanelState";
 
     ZororoDonate.build(panel, { t });
     donateBtn.onclick = () => {
+      /* @telemetry-start */
+      tel("feature", { action: "support", surface: "ororo" });
+      /* @telemetry-end */
       ZororoDonate.open(panel);
     };
 
@@ -691,11 +755,17 @@ const PANEL_STATE_KEY = "zororoPanelState";
         if (panel.contains(e.target)) return;
         if (panel.classList.contains("collapsed")) {
           if (maximizeGesture === gesture) {
+            /* @telemetry-start */
+            tel("panel", { action: "expand", surface: "ororo", reason: "gesture" });
+            /* @telemetry-end */
             panel.classList.remove("collapsed");
             chrome.storage.local.set({ [PANEL_STATE_KEY]: "expanded" });
           }
         } else {
           if (minimizeGesture === gesture) {
+            /* @telemetry-start */
+            tel("panel", { action: "collapse", surface: "ororo", reason: "gesture" });
+            /* @telemetry-end */
             panel.classList.add("collapsed");
             chrome.storage.local.set({ [PANEL_STATE_KEY]: "collapsed" });
           }
@@ -759,6 +829,14 @@ const PANEL_STATE_KEY = "zororoPanelState";
         FREE_LIMIT: t("freeLimit"),
         SHOW_NOT_FOUND: t("showNotFound"),
       };
+      /* @telemetry-start */
+      tel("error", {
+        action: err.message === "AUTH_FAILED" ? "auth_failed" : err.message === "FREE_LIMIT" ? "free_limit" : err.message === "SHOW_NOT_FOUND" ? "show_not_found" : "api_error",
+        surface: "ororo",
+        title: showName || slug || "",
+        media_type: "show",
+      });
+      /* @telemetry-end */
       errorEl.textContent = msgs[err.message] || t("loadFailed") + ": " + err.message;
       errorEl.classList.add("visible");
       subEl.textContent = t("loadFailed");
@@ -796,6 +874,14 @@ const PANEL_STATE_KEY = "zororoPanelState";
         AUTH_FAILED: t("authFailed"),
         FREE_LIMIT: t("freeLimit"),
       };
+      /* @telemetry-start */
+      tel("error", {
+        action: err.message === "AUTH_FAILED" ? "auth_failed" : err.message === "FREE_LIMIT" ? "free_limit" : "api_error",
+        surface: "ororo",
+        title: showName || slug || "",
+        media_type: "movie",
+      });
+      /* @telemetry-end */
       errorEl.textContent = msgs[err.message] || t("loadFailed") + ": " + err.message;
       errorEl.classList.add("visible");
       subEl.textContent = t("loadFailed");
@@ -827,7 +913,19 @@ const PANEL_STATE_KEY = "zororoPanelState";
     let overridden = entry ? !!entry.globalOverride : false;
 
     async function handleStarClick(i) {
+      const prevRating = currentRating;
       currentRating = currentRating === i ? 0 : i;
+      /* @telemetry-start */
+      tel("rating", {
+        action: currentRating ? "rate" : "unrate",
+        media_type: isMovie ? "movie" : "show",
+        title: title || "",
+        show_id: showId == null ? "" : String(showId),
+        value: currentRating || "",
+        prev_value: prevRating || "",
+        surface: "ororo",
+      });
+      /* @telemetry-end */
       if (currentRating > 0) {
         overridden = true;
         const item = {
@@ -921,6 +1019,18 @@ const PANEL_STATE_KEY = "zororoPanelState";
         s.onclick = async () => {
           const current = seasonRatings[key] || 0;
           const next = current === i ? 0 : i;
+          /* @telemetry-start */
+          tel("rating", {
+            action: next ? "rate" : "unrate",
+            media_type: "show",
+            title: showName || "",
+            show_id: showId == null ? "" : String(showId),
+            season: season,
+            value: next || "",
+            prev_value: current || "",
+            surface: "ororo",
+          });
+          /* @telemetry-end */
           seasonRatings[key] = next;
           await saveSeasonRating(showId, season, next);
           render(next);
@@ -982,6 +1092,18 @@ const PANEL_STATE_KEY = "zororoPanelState";
         a.rel = "noopener";
         a.textContent = "IMDb";
         a.title = t("openImdb");
+        /* @telemetry-start */
+        a.addEventListener("click", () => {
+          const idMatch = /\/title\/(tt\d+)/.exec(String(imdbUrl));
+          tel("feature", {
+            action: "open_imdb",
+            surface: "ororo",
+            title: title || "",
+            media_type: isMovie ? "movie" : "show",
+            imdb_id: idMatch ? idMatch[1] : "",
+          });
+        });
+        /* @telemetry-end */
         extLinksEl.appendChild(a);
         hasLinks = true;
       }
@@ -994,6 +1116,14 @@ const PANEL_STATE_KEY = "zororoPanelState";
         a.rel = "noopener";
         a.textContent = "RT";
         a.title = t("openRt");
+        /* @telemetry-start */
+        a.addEventListener("click", () => tel("feature", {
+          action: "open_rt",
+          surface: "ororo",
+          title: title || "",
+          media_type: isMovie ? "movie" : "show",
+        }));
+        /* @telemetry-end */
         extLinksEl.appendChild(a);
         hasLinks = true;
       }
@@ -1043,6 +1173,9 @@ const PANEL_STATE_KEY = "zororoPanelState";
     rateBtn.className = "nudge-btn rate";
     rateBtn.textContent = "★ " + t("reviewUs");
     rateBtn.onclick = () => {
+      /* @telemetry-start */
+      tel("review_prompt", { action: "review", surface: "ororo" });
+      /* @telemetry-end */
       chrome.storage.local.set({ zororoRated: true });
       window.open(RATE_URL, "_blank");
       nudge.remove();
@@ -1051,6 +1184,9 @@ const PANEL_STATE_KEY = "zororoPanelState";
     laterBtn.className = "nudge-btn";
     laterBtn.textContent = t("reviewLater");
     laterBtn.onclick = () => {
+      /* @telemetry-start */
+      tel("review_prompt", { action: "later", surface: "ororo" });
+      /* @telemetry-end */
       chrome.storage.local.set({ zororoDownloadCount: 0 });
       nudge.remove();
     };
@@ -1058,6 +1194,9 @@ const PANEL_STATE_KEY = "zororoPanelState";
     neverBtn.className = "nudge-btn";
     neverBtn.textContent = t("reviewNever");
     neverBtn.onclick = () => {
+      /* @telemetry-start */
+      tel("review_prompt", { action: "never", surface: "ororo" });
+      /* @telemetry-end */
       chrome.storage.local.set({ zororoRated: true });
       nudge.remove();
     };
@@ -1067,6 +1206,9 @@ const PANEL_STATE_KEY = "zororoPanelState";
     btns.appendChild(neverBtn);
     nudge.appendChild(btns);
     statusBar.appendChild(nudge);
+    /* @telemetry-start */
+    tel("review_prompt", { action: "shown", surface: "ororo" });
+    /* @telemetry-end */
   }
 
   async function renderDownloadSection(bodyEl, titleEl, subEl, watchedEl, statusBar, errorEl) {
@@ -1329,6 +1471,14 @@ const PANEL_STATE_KEY = "zororoPanelState";
         link.dataset.state = "";
         return;
       }
+      /* @telemetry-start */
+      tel("feature", {
+        action: "translate",
+        surface: "ororo",
+        title: showName || slug || "",
+        media_type: isMovie ? "movie" : "show",
+      });
+      /* @telemetry-end */
       const translated = await translateText(text, targetLang);
       if (translated === null) {
         flashFailure(link);
